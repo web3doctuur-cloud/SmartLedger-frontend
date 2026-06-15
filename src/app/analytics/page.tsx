@@ -29,6 +29,7 @@ export default function AnalyticsPage() {
       const response = await api.get('/Products');
       const products = response.data;
 
+      // Inventory by Category
       const categoryMap = new Map();
       products.forEach((p: any) => {
         if (p.category && p.totalCost > 0) {
@@ -37,7 +38,12 @@ export default function AnalyticsPage() {
       });
       setCategoryData(Array.from(categoryMap.entries()).map(([name, value]) => ({ name, value })));
 
-      const revenueRaw = products.filter((p: any) => p.expectedRevenue > 0).map((p: any) => ({ name: p.name, value: p.expectedRevenue })).sort((a: any, b: any) => b.value - a.value);
+      // Revenue by Product (Top 5 + Others)
+      const revenueRaw = products
+        .filter((p: any) => p.expectedRevenue > 0)
+        .map((p: any) => ({ name: p.name, value: p.expectedRevenue }))
+        .sort((a: any, b: any) => b.value - a.value);
+      
       const top5 = revenueRaw.slice(0, 5);
       const others = revenueRaw.slice(5).reduce((sum: number, p: any) => sum + p.value, 0);
       if (others > 0) top5.push({ name: 'Others', value: others });
@@ -49,24 +55,91 @@ export default function AnalyticsPage() {
     }
   };
 
-  if (isLoading || loading) return <div className="flex justify-center items-center h-96"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500"></div></div>;
+  // Custom label formatter to fix TypeScript error
+  const renderLabel = (entry: any) => {
+    const percent = entry.percent;
+    if (percent === undefined) return entry.name;
+    return `${entry.name}: ${(percent * 100).toFixed(0)}%`;
+  };
+
+  if (isLoading || loading) {
+    return (
+      <div className="flex justify-center items-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500"></div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+        <p className="text-yellow-800">Analytics are only available for administrators.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div><h1 className="text-3xl font-bold text-gray-900">Analytics</h1><p className="text-gray-600 mt-1">Visual insights (Admin only)</p></div>
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Analytics</h1>
+        <p className="text-gray-600 mt-1">Visual insights into your business performance</p>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Inventory by Category */}
         <div className="bg-white rounded-xl shadow-md p-6">
           <h2 className="text-xl font-semibold mb-4">Inventory by Category</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart><Pie data={categoryData} cx="50%" cy="50%" labelLine={false} label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`} outerRadius={100} dataKey="value">{categoryData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}</Pie><Tooltip formatter={(v: any) => `$${v.toLocaleString()}`} /><Legend /></PieChart>
-          </ResponsiveContainer>
+          {categoryData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={categoryData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={renderLabel}
+                  outerRadius={100}
+                  dataKey="value"
+                >
+                  {categoryData.map((_, i) => (
+                    <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value: any) => `$${value.toLocaleString()}`} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="text-center py-12 text-gray-500">No category data available</div>
+          )}
         </div>
+
+        {/* Revenue by Product */}
         <div className="bg-white rounded-xl shadow-md p-6">
           <h2 className="text-xl font-semibold mb-4">Expected Revenue by Product</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart><Pie data={revenueData} cx="50%" cy="50%" labelLine={false} label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`} outerRadius={100} dataKey="value">{revenueData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}</Pie><Tooltip formatter={(v: any) => `$${v.toLocaleString()}`} /><Legend /></PieChart>
-          </ResponsiveContainer>
+          {revenueData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={revenueData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={renderLabel}
+                  outerRadius={100}
+                  dataKey="value"
+                >
+                  {revenueData.map((_, i) => (
+                    <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value: any) => `$${value.toLocaleString()}`} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="text-center py-12 text-gray-500">No product data available</div>
+          )}
         </div>
       </div>
     </div>
