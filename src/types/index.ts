@@ -1,0 +1,68 @@
+export interface Product {
+  id: number;
+  name: string;
+  description?: string;
+  category?: string;
+  quantity: number;
+  costPrice: number;
+  sellingPrice: number;
+  expectedRevenue: number;
+  totalCost: number;
+  potentialProfit: number;
+  profitMargin: number;
+  isLowStock: boolean;
+  lowStockThreshold: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface Task {
+  id: number;
+  title: string;
+  description?: string;
+  priority: 'HIGH' | 'MEDIUM' | 'LOW';
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
+  dueDate?: string;
+  completedAt?: string;
+  createdAt: string;
+  isOverdue: boolean;
+}
+
+export interface DashboardStats {
+  inventory: {
+    totalProducts: number;
+    totalInventoryValue: number;
+    totalExpectedRevenue: number;
+    lowStockCount: number;
+    lowStockProducts: Array<{ id: number; name: string; quantity: number; lowStockThreshold: number }>;
+  };
+  tasks: {
+    pending: number;
+    completed: number;
+    completionRate: number;
+  };
+  accounting: {
+    income: number;
+    expenses: number;
+    netProfit: number;
+    profitMargin: number;
+  };
+}
+
+export interface IncomeStatement {
+  period: { from: string; to: string };
+  income: { total: number; details: Array<{ accountName: string; amount: number }> };
+  expenses: { total: number; details: Array<{ accountName: string; amount: number }> };
+  netProfit: number;
+  isProfit: boolean;
+  profitMargin: number;
+}
+
+export interface BalanceSheet {
+  asOfDate: string;
+  assets: { total: number; details: Array<{ accountName: string; balance: number }> };
+  liabilities: { total: number; details: Array<{ accountName: string; balance: number }> };
+  equity: { total: number; details: Array<{ accountName: string; balance: number }> };
+  isBalanced: boolean;
+}
