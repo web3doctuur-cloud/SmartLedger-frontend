@@ -93,12 +93,12 @@ export default function AccountsPage() {
   const openEditModal = (account: Account) => {
     setEditingAccount(account);
     setFormData({
-      name: account.name,
-      code: account.code,
-      type: account.type,
+      name: account.name || '',
+      code: account.code || '',
+      type: account.type || 'ASSET',
       description: account.description || '',
-      balance: account.balance,
-      isActive: account.isActive,
+      balance: account.balance ?? 0,
+      isActive: account.isActive ?? true,
     });
     setShowModal(true);
   };

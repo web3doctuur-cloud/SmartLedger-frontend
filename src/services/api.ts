@@ -1,13 +1,13 @@
 import axios from 'axios';
 
-const API_URL = "https://smartledger-api-o7hy.onrender.com/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://smartledger-api-o7hy.onrender.com/api";
 
 const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000, // 30 second timeout for cold starts
+  timeout: 60000, // 60 second timeout for cold starts
 });
 
 // Add token to requests

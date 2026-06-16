@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useTransition } from 'react';
+import React, { createContext, useContext, useState, useTransition, useCallback } from 'react';
 import api from '../services/api';
 import { jwtDecode } from 'jwt-decode';
 import toast from 'react-hot-toast';
@@ -42,7 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [, startTransition] = useTransition();
 
-  const initializeAuth = () => {
+  const initializeAuth = useCallback(() => {
     const token = localStorage.getItem('token');
     if (token) {
       try {
@@ -62,9 +62,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
     setIsLoading(false);
-  };
+  }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     try {
       console.log('Login attempt for:', email);
       
@@ -106,9 +106,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       return { success: false, error: errorMessage };
     }
-  };
+  }, []);
 
-  const register = async (email: string, password: string) => {
+  const register = useCallback(async (email: string, password: string) => {
     const passwordErrors: string[] = [];
     if (password.length < 6) {
       passwordErrors.push('Password must be at least 6 characters');
@@ -198,13 +198,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       return { success: false, error: (err.response?.data as { message?: string })?.message || 'Registration failed' };
     }
-  };
+  }, [login]);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem('token');
     setUser(null);
     toast.success('Logged out successfully');
-  };
+  }, []);
 
   const isAdmin = user?.roles?.includes('Admin') || false;
 

@@ -134,13 +134,13 @@ export default function ProductsPage() {
   const openEditModal = (product: Product) => {
     setEditingProduct(product);
     setFormData({
-      name: product.name,
+      name: product.name || '',
       description: product.description || '',
       category: product.category || '',
-      quantity: product.quantity,
-      costPrice: product.costPrice,
-      sellingPrice: product.sellingPrice,
-      lowStockThreshold: product.lowStockThreshold,
+      quantity: product.quantity ?? 0,
+      costPrice: product.costPrice ?? 0,
+      sellingPrice: product.sellingPrice ?? 0,
+      lowStockThreshold: product.lowStockThreshold ?? 10,
     });
     setShowModal(true);
   };
