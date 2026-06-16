@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useTransition } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
 import api from '../services/api';
@@ -32,7 +32,7 @@ export default function DashboardPage() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [, startTransition] = useTransition();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -40,45 +40,29 @@ export default function DashboardPage() {
     }
   }, [isLoading, isAuthenticated, router]);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchDashboardStats();
-    }
-  }, [isAuthenticated]);
-
-  const fetchDashboardStats = async (retryCount = 0) => {
-    const maxRetries = 3;
-    const retryDelay = 3000;
-
+  const fetchDashboardStats = useCallback(async () => {
     try {
       const response = await api.get('/Dashboard/summary');
       setStats(response.data);
-      setLoading(false);
-    } catch (error: any) {
-      console.error(`Attempt ${retryCount + 1} failed:`, error);
-
-      const isNetworkError =
-        error.code === 'ERR_NETWORK' || error.message === 'Network Error';
-
-      if (retryCount < maxRetries) {
-        setTimeout(() => fetchDashboardStats(retryCount + 1), retryDelay);
-        return;
-      }
-
-      toast.error(
-        isNetworkError
-          ? 'Server is waking up. Please refresh in 30 seconds.'
-          : 'Failed to load dashboard data after multiple attempts'
-      );
-      setLoading(false);
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error);
+      toast.error('Unable to load dashboard data. Please try again later.');
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      startTransition(() => {
+        fetchDashboardStats();
+      });
+    }
+  }, [isAuthenticated, fetchDashboardStats]);
 
   const statCards = [
     { title: 'Total Products', value: stats?.inventory.totalProducts || 0, icon: CubeIcon, color: 'bg-yellow-500' },
-    { title: 'Inventory Value', value: `$${stats?.inventory.totalInventoryValue?.toLocaleString() || 0}`, icon: CurrencyDollarIcon, color: 'bg-green-500' },
-    { title: 'Expected Revenue', value: `$${stats?.inventory.totalExpectedRevenue?.toLocaleString() || 0}`, icon: ChartBarIcon, color: 'bg-blue-500' },
-    { title: 'Pending Tasks', value: stats?.tasks.pending || 0, icon: CheckCircleIcon, color: 'bg-purple-500' },
+    { title: 'Inventory Value', value: `$${stats?.inventory.totalInventoryValue?.toLocaleString() || 0}`, icon: CurrencyDollarIcon, color: 'bg-black' },
+    { title: 'Expected Revenue', value: `$${stats?.inventory.totalExpectedRevenue?.toLocaleString() || 0}`, icon: ChartBarIcon, color: 'bg-gray-800' },
+    { title: 'Pending Tasks', value: stats?.tasks.pending || 0, icon: CheckCircleIcon, color: 'bg-gray-700' },
   ];
 
   return (
@@ -88,9 +72,9 @@ export default function DashboardPage() {
         <p className="text-gray-600 mt-1">Welcome back to SmartLedger</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {statCards.map((card, index) => (
-          <div key={index} className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
+          <div key={index} className="bg-white rounded-xl shadow-md p-6 border border-gray-100 hover:shadow-lg transition-shadow">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">{card.title}</p>
@@ -104,8 +88,8 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100 hover:shadow-lg transition-shadow">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Financial Summary</h2>
           <div className="space-y-4">
             <div className="flex justify-between items-center pb-2 border-b border-gray-100">
@@ -129,7 +113,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
+        <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100 hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-gray-900">Low Stock Alerts</h2>
             <ExclamationTriangleIcon className="h-6 w-6 text-yellow-500" />

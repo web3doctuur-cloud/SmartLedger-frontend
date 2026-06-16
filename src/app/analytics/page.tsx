@@ -1,37 +1,41 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useTransition } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'next/navigation';
 import api from '../../services/api';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { Product } from '../../types';
 
-const COLORS = ['#000000', '#F59E0B', '#10B981', '#3B82F6', '#EF4444', '#8B5CF6'];
+const COLORS = ['#000000', '#F59E0B', '#1F2937', '#374151', '#4B5563', '#6B7280'];
+
+interface ChartData {
+  name: string;
+  value: number;
+  percent?: number;
+}
 
 export default function AnalyticsPage() {
   const { isAuthenticated, isLoading, isAdmin } = useAuth();
   const router = useRouter();
-  const [categoryData, setCategoryData] = useState<any[]>([]);
-  const [revenueData, setRevenueData] = useState<any[]>([]);
+  const [categoryData, setCategoryData] = useState<ChartData[]>([]);
+  const [revenueData, setRevenueData] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [, startTransition] = useTransition();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) router.push('/login');
     if (!isLoading && !isAdmin) router.push('/');
   }, [isLoading, isAuthenticated, isAdmin, router]);
 
-  useEffect(() => {
-    if (isAuthenticated && isAdmin) fetchAnalytics();
-  }, [isAuthenticated, isAdmin]);
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
-      const response = await api.get('/Products');
+      const response = await api.get<Product[]>('/Products');
       const products = response.data;
 
       // Inventory by Category
-      const categoryMap = new Map();
-      products.forEach((p: any) => {
+      const categoryMap = new Map<string, number>();
+      products.forEach((p) => {
         if (p.category && p.totalCost > 0) {
           categoryMap.set(p.category, (categoryMap.get(p.category) || 0) + p.totalCost);
         }
@@ -40,12 +44,12 @@ export default function AnalyticsPage() {
 
       // Revenue by Product (Top 5 + Others)
       const revenueRaw = products
-        .filter((p: any) => p.expectedRevenue > 0)
-        .map((p: any) => ({ name: p.name, value: p.expectedRevenue }))
-        .sort((a: any, b: any) => b.value - a.value);
+        .filter((p) => p.expectedRevenue > 0)
+        .map((p) => ({ name: p.name, value: p.expectedRevenue }))
+        .sort((a, b) => b.value - a.value);
       
       const top5 = revenueRaw.slice(0, 5);
-      const others = revenueRaw.slice(5).reduce((sum: number, p: any) => sum + p.value, 0);
+      const others = revenueRaw.slice(5).reduce((sum, p) => sum + p.value, 0);
       if (others > 0) top5.push({ name: 'Others', value: others });
       setRevenueData(top5);
     } catch (error) {
@@ -53,10 +57,18 @@ export default function AnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated && isAdmin) {
+      startTransition(() => {
+        fetchAnalytics();
+      });
+    }
+  }, [isAuthenticated, isAdmin, fetchAnalytics]);
 
   // Custom label formatter to fix TypeScript error
-  const renderLabel = (entry: any) => {
+  const renderLabel = (entry: ChartData) => {
     const percent = entry.percent;
     if (percent === undefined) return entry.name;
     return `${entry.name}: ${(percent * 100).toFixed(0)}%`;
@@ -65,15 +77,15 @@ export default function AnalyticsPage() {
   if (isLoading || loading) {
     return (
       <div className="flex justify-center items-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 border-l-2 border-transparent"></div>
       </div>
     );
   }
 
   if (!isAdmin) {
     return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
-        <p className="text-yellow-800">Analytics are only available for administrators.</p>
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-8 text-center">
+        <p className="text-yellow-800 text-lg">Analytics are only available for administrators.</p>
       </div>
     );
   }
@@ -85,9 +97,9 @@ export default function AnalyticsPage() {
         <p className="text-gray-600 mt-1">Visual insights into your business performance</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Inventory by Category */}
-        <div className="bg-white rounded-xl shadow-md p-6">
+        <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow">
           <h2 className="text-xl font-semibold mb-4">Inventory by Category</h2>
           {categoryData.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
@@ -105,7 +117,7 @@ export default function AnalyticsPage() {
                     <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: any) => `$${value.toLocaleString()}`} />
+                <Tooltip formatter={(value: number) => `$${value.toLocaleString()}`} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
@@ -115,7 +127,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Revenue by Product */}
-        <div className="bg-white rounded-xl shadow-md p-6">
+        <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow">
           <h2 className="text-xl font-semibold mb-4">Expected Revenue by Product</h2>
           {revenueData.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
@@ -133,7 +145,7 @@ export default function AnalyticsPage() {
                     <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: any) => `$${value.toLocaleString()}`} />
+                <Tooltip formatter={(value: number) => `$${value.toLocaleString()}`} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>

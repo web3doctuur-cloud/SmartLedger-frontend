@@ -12,7 +12,9 @@ import {
   DocumentTextIcon,
   ArrowRightOnRectangleIcon,
   Bars3Icon,
-  XMarkIcon
+  XMarkIcon,
+  BuildingLibraryIcon,
+  BookOpenIcon
 } from '@heroicons/react/24/outline';
 
 const Navbar = () => {
@@ -24,6 +26,8 @@ const Navbar = () => {
     { href: '/', label: 'Dashboard', icon: HomeIcon, showWhen: true },
     { href: '/products', label: 'Products', icon: CubeIcon, showWhen: isAuthenticated },
     { href: '/tasks', label: 'Tasks', icon: CheckCircleIcon, showWhen: isAuthenticated },
+    { href: '/accounts', label: 'Accounts', icon: BuildingLibraryIcon, showWhen: isAuthenticated },
+    { href: '/journal', label: 'Journal Entries', icon: BookOpenIcon, showWhen: isAuthenticated },
     { href: '/reports', label: 'Reports', icon: DocumentTextIcon, showWhen: isAuthenticated },
     { href: '/analytics', label: 'Analytics', icon: ChartBarIcon, showWhen: isAdmin },
   ];

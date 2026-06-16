@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useTransition } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'next/navigation';
 import api from '../../services/api';
@@ -26,25 +26,30 @@ export default function TasksPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [formData, setFormData] = useState({ title: '', description: '', priority: 'MEDIUM', dueDate: '' });
+  const [, startTransition] = useTransition();
+
+  const fetchTasks = useCallback(async () => {
+    try {
+      const response = await api.get('/Todo');
+      setTasks(response.data);
+    } catch {
+      toast.error('Failed to load tasks');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) router.push('/login');
   }, [isLoading, isAuthenticated, router]);
 
   useEffect(() => {
-    if (isAuthenticated) fetchTasks();
-  }, [isAuthenticated]);
-
-  const fetchTasks = async () => {
-    try {
-      const response = await api.get('/Todo');
-      setTasks(response.data);
-    } catch (error) {
-      toast.error('Failed to load tasks');
-    } finally {
-      setLoading(false);
+    if (isAuthenticated) {
+      startTransition(() => {
+        fetchTasks();
+      });
     }
-  };
+  }, [isAuthenticated, fetchTasks]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,7 +64,7 @@ export default function TasksPage() {
       setShowModal(false);
       resetForm();
       fetchTasks();
-    } catch (error) {
+    } catch {
       toast.error('Failed to save task');
     }
   };
@@ -101,31 +106,31 @@ export default function TasksPage() {
     return 'text-gray-600 bg-gray-50';
   };
 
-  if (isLoading || loading) return <div className="flex justify-center items-center h-96"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500"></div></div>;
+  if (isLoading || loading) return <div className="flex justify-center items-center h-96"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 border-l-2 border-transparent"></div></div>;
 
   const pendingTasks = tasks.filter(t => t.status !== 'COMPLETED');
   const completedTasks = tasks.filter(t => t.status === 'COMPLETED');
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div><h1 className="text-3xl font-bold text-gray-900">Tasks</h1><p className="text-gray-600 mt-1">Manage your to-do list</p></div>
-        <button onClick={() => setShowModal(true)} className="bg-black text-white px-4 py-2 rounded-lg hover:bg-yellow-500 hover:text-black">+ Add Task</button>
+        <button onClick={() => setShowModal(true)} className="bg-black text-white px-4 py-2 rounded-lg hover:bg-yellow-500 hover:text-black transition-colors w-full sm:w-auto">+ Add Task</button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl shadow-md p-6"><p className="text-sm text-gray-500">Total Tasks</p><p className="text-2xl font-bold">{tasks.length}</p></div>
-        <div className="bg-white rounded-xl shadow-md p-6"><p className="text-sm text-gray-500">Pending</p><p className="text-2xl font-bold text-yellow-600">{pendingTasks.length}</p></div>
-        <div className="bg-white rounded-xl shadow-md p-6"><p className="text-sm text-gray-500">Completed</p><p className="text-2xl font-bold text-green-600">{completedTasks.length}</p></div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+        <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow"><p className="text-sm text-gray-500">Total Tasks</p><p className="text-2xl font-bold">{tasks.length}</p></div>
+        <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow"><p className="text-sm text-gray-500">Pending</p><p className="text-2xl font-bold text-yellow-600">{pendingTasks.length}</p></div>
+        <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow"><p className="text-sm text-gray-500">Completed</p><p className="text-2xl font-bold text-green-600">{completedTasks.length}</p></div>
       </div>
 
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">Pending Tasks</h2>
         {pendingTasks.map(task => (
-          <div key={task.id} className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-            <div className="flex justify-between items-start">
+          <div key={task.id} className="bg-white rounded-xl shadow-md p-6 border border-gray-100 hover:shadow-lg transition-shadow">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div className="flex-1">
-                <div className="flex items-center space-x-3">
+                <div className="flex flex-wrap items-center gap-2">
                   <h3 className="text-lg font-semibold">{task.title}</h3>
                   <span className={`px-2 py-1 text-xs rounded-full ${getPriorityColor(task.priority)}`}>{task.priority}</span>
                   <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(task.status)}`}>{task.status}</span>
@@ -146,19 +151,19 @@ export default function TasksPage() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full">
-            <h2 className="text-xl font-bold mb-4">{editingTask ? 'Edit Task' : 'Add Task'}</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <h2 className="text-xl font-bold mb-4 text-gray-900">{editingTask ? 'Edit Task' : 'Add Task'}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <input type="text" placeholder="Title" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="w-full px-3 py-2 border rounded-lg" required />
-              <textarea placeholder="Description" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="w-full px-3 py-2 border rounded-lg" rows={2} />
-              <select value={formData.priority} onChange={(e) => setFormData({...formData, priority: e.target.value})} className="w-full px-3 py-2 border rounded-lg">
+              <input type="text" placeholder="Title" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent" required />
+              <textarea placeholder="Description" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent" rows={2} />
+              <select value={formData.priority} onChange={(e) => setFormData({...formData, priority: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent">
                 <option value="HIGH">High</option><option value="MEDIUM">Medium</option><option value="LOW">Low</option>
               </select>
-              <input type="date" value={formData.dueDate} onChange={(e) => setFormData({...formData, dueDate: e.target.value})} className="w-full px-3 py-2 border rounded-lg" />
+              <input type="date" value={formData.dueDate} onChange={(e) => setFormData({...formData, dueDate: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent" />
               <div className="flex justify-end space-x-3">
-                <button type="button" onClick={() => { setShowModal(false); resetForm(); }} className="px-4 py-2 border rounded-lg">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-black text-white rounded-lg hover:bg-yellow-500 hover:text-black">Save</button>
+                <button type="button" onClick={() => { setShowModal(false); resetForm(); }} className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-black text-white rounded-lg hover:bg-yellow-500 hover:text-black transition-colors">Save</button>
               </div>
             </form>
           </div>

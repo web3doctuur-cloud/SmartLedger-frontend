@@ -1,9 +1,16 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useTransition } from 'react';
 import api from '../services/api';
 import { jwtDecode } from 'jwt-decode';
 import toast from 'react-hot-toast';
+
+interface DecodedToken {
+  userId?: string;
+  sub?: string;
+  email: string;
+  [key: string]: unknown;
+}
 
 interface User {
   id: string;
@@ -19,6 +26,7 @@ interface AuthContextType {
   register: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   isAuthenticated: boolean;
+  initializeAuth: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,17 +40,21 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [, startTransition] = useTransition();
 
-  useEffect(() => {
+  const initializeAuth = () => {
     const token = localStorage.getItem('token');
     if (token) {
       try {
-        const decoded: any = jwtDecode(token);
-        const roles = decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || [];
-        setUser({
-          id: decoded.userId || decoded.sub,
-          email: decoded.email,
-          roles: Array.isArray(roles) ? roles : [roles],
+        const decoded = jwtDecode(token) as DecodedToken;
+        const rolesClaim = decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+        const roles = Array.isArray(rolesClaim) ? rolesClaim : rolesClaim ? [rolesClaim] : [];
+        startTransition(() => {
+          setUser({
+            id: decoded.userId || decoded.sub || '',
+            email: decoded.email,
+            roles,
+          });
         });
       } catch (error) {
         console.error('Token decode error:', error);
@@ -50,7 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
     setIsLoading(false);
-  }, []);
+  };
 
   const login = async (email: string, password: string) => {
     try {
@@ -73,22 +85,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser({ id: userId, email: userEmail, roles: roles || [] });
       
       return { success: true };
-    } catch (error: any) {
-      console.error('Login error:', error.response?.data);
+    } catch (error) {
+      const err = error as { code?: string; message?: string; response?: { status?: number; data?: { message?: string; errors?: unknown } } };
+      console.error('Login error:', err.response?.data);
       
       let errorMessage = 'Login failed';
       
-      if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+      if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
         errorMessage = 'Server is waking up. Please try again in 30 seconds.';
-      } else if (error.response?.status === 401) {
+      } else if (err.response?.status === 401) {
         errorMessage = 'Invalid email or password';
-      } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.response?.data?.errors) {
-        const errors = error.response.data.errors;
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.response?.data?.errors) {
+        const errors = err.response.data.errors;
         errorMessage = Array.isArray(errors)
           ? errors.join(', ')
-          : Object.values(errors).flat().join(', ');
+          : Object.values(errors as Record<string, unknown>).flat().join(', ');
       }
       
       return { success: false, error: errorMessage };
@@ -132,26 +145,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       return { success: false, error: 'Registration failed' };
-    } catch (error: any) {
-      console.error('Registration error full:', error);
-      console.error('Registration error response:', error.response?.data);
-      console.error('Registration error status:', error.response?.status);
+    } catch (error) {
+      const err = error as { code?: string; message?: string; response?: { status?: number; data?: unknown } };
+      console.error('Registration error full:', err);
+      console.error('Registration error response:', err.response?.data);
+      console.error('Registration error status:', err.response?.status);
       
       // Handle 400 Bad Request - likely validation errors or duplicate email
-      if (error.response?.status === 400) {
-        const errorData = error.response.data;
+      if (err.response?.status === 400) {
+        const errorData = err.response.data as { errors?: unknown; message?: string; title?: string };
         
         if (errorData.errors) {
           if (Array.isArray(errorData.errors)) {
             return { success: false, error: errorData.errors.join('. ') };
           }
 
-          const firstErrorKey = Object.keys(errorData.errors)[0];
-          const firstErrorMessage = errorData.errors[firstErrorKey];
+          const firstErrorKey = Object.keys(errorData.errors as Record<string, unknown>)[0];
+          const firstErrorMessage = (errorData.errors as Record<string, unknown>)[firstErrorKey];
           const message = Array.isArray(firstErrorMessage)
             ? firstErrorMessage[0]
             : firstErrorMessage;
-          return { success: false, error: message || 'Registration failed' };
+          return { success: false, error: (message as string) || 'Registration failed' };
         }
         
         if (errorData.message) {
@@ -173,16 +187,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       // Handle 500 Server Error
-      if (error.response?.status === 500) {
+      if (err.response?.status === 500) {
         return { success: false, error: 'Server error. Please try again later.' };
       }
       
       // Handle network errors (API sleeping on free tier)
-      if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+      if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
         return { success: false, error: 'Server is waking up. Please try again in 30 seconds.' };
       }
       
-      return { success: false, error: error.response?.data?.message || 'Registration failed' };
+      return { success: false, error: (err.response?.data as { message?: string })?.message || 'Registration failed' };
     }
   };
 
@@ -202,7 +216,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       login, 
       register, 
       logout, 
-      isAuthenticated: !!user 
+      isAuthenticated: !!user,
+      initializeAuth
     }}>
       {children}
     </AuthContext.Provider>

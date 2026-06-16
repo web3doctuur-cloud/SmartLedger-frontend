@@ -1,1 +1,72 @@
 @import "tailwindcss";
+
+:root {
+  --color-primary: #000000;
+  --color-primary-light: #1a1a1a;
+  --color-accent: #F59E0B;
+  --color-accent-hover: #D97706;
+  --color-accent-light: #FEF3C7;
+  --color-surface: #FFFFFF;
+  --color-surface-alt: #F9FAFB;
+  --color-text-primary: #111827;
+  --color-text-secondary: #6B7280;
+  --color-border: #E5E7EB;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #000000;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #333333;
+}
+
+/* Loading spinner */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Toast notifications */
+.toast-success {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  border-left: 4px solid #F59E0B !important;
+}
+
+.toast-error {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  border-left: 4px solid #EF4444 !important;
+}
+
+.toast-loading {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+}

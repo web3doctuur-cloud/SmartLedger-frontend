@@ -66,3 +66,49 @@ export interface BalanceSheet {
   equity: { total: number; details: Array<{ accountName: string; balance: number }> };
   isBalanced: boolean;
 }
+
+export type AccountType = 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
+export type EntryType = 'DEBIT' | 'CREDIT';
+
+export interface Account {
+  id: number;
+  name: string;
+  code: string;
+  type: AccountType;
+  description?: string;
+  balance: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface JournalEntryLine {
+  id: number;
+  accountId: number;
+  accountName?: string;
+  type: EntryType;
+  amount: number;
+}
+
+export interface JournalEntry {
+  id: number;
+  date: string;
+  description?: string;
+  reference?: string;
+  lines: JournalEntryLine[];
+  isApproved: boolean;
+  approvedAt?: string;
+  createdAt: string;
+  createdBy: string;
+}
+
+export interface CreateJournalEntryDto {
+  date: string;
+  description?: string;
+  reference?: string;
+  lines: Array<{
+    accountId: number;
+    type: EntryType;
+    amount: number;
+  }>;
+}
