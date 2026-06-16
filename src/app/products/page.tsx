@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'next/navigation';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
-import { PencilIcon, TrashIcon, PlusIcon, MinusIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, TrashIcon, PlusIcon, MinusIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 interface Product {
   id: number;
@@ -153,61 +153,100 @@ export default function ProductsPage() {
 
   if (isLoading || loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 border-l-2 border-transparent"></div>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <div className="animate-spin rounded-full h-14 w-14 border-b-3 border-l-3 border-yellow-500 border-transparent"></div>
+        <p className="text-gray-500 text-lg font-medium animate-pulse">Loading products...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 sm:space-y-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Products</h1>
-          <p className="text-gray-600 mt-1">Manage your inventory and products</p>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">Products</h1>
+          <p className="text-gray-600 mt-2 text-lg">Manage your inventory and product catalog</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="bg-black text-white px-4 py-2 rounded-lg hover:bg-yellow-500 hover:text-black transition-colors w-full sm:w-auto"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-black text-white px-6 py-3 rounded-xl font-semibold hover:bg-yellow-500 hover:text-black transition-all duration-300 shadow-lg hover:shadow-xl"
         >
-          + Add Product
+          <PlusIcon className="h-5 w-5" />
+          Add Product
         </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 hover:shadow-lg transition-shadow">
+      <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr><th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Category</th>
-                <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Cost</th>
-                <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Selling</th>
-                <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Revenue</th>
-                <th className="px-4 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+          <table className="min-w-full divide-y divide-gray-100">
+            <thead className="bg-gray-50/80">
+              <tr>
+                <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Product</th>
+                <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider hidden sm:table-cell">Category</th>
+                <th className="px-4 sm:px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Quantity</th>
+                <th className="px-4 sm:px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider hidden md:table-cell">Cost</th>
+                <th className="px-4 sm:px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider hidden md:table-cell">Selling</th>
+                <th className="px-4 sm:px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Revenue</th>
+                <th className="px-4 sm:px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-100">
               {products.map((product) => (
-                <tr key={product.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                <tr key={product.id} className="hover:bg-gray-50 transition-colors duration-200">
+                  <td className="px-4 sm:px-6 py-5 whitespace-nowrap">
+                    <div className="text-base font-semibold text-gray-900">{product.name}</div>
                   </td>
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600 hidden sm:table-cell">{product.category || '-'}</td>
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right">
-                    <span className={`text-sm font-medium ${product.isLowStock ? 'text-red-600' : 'text-gray-900'}`}>
-                      {product.quantity}
-                    </span>
-                    {product.isLowStock && <span className="ml-2 px-1.5 py-0.5 bg-yellow-100 text-yellow-800 text-xs rounded-full">Low</span>}
+                  <td className="px-4 sm:px-6 py-5 whitespace-nowrap text-sm text-gray-600 hidden sm:table-cell">
+                    {product.category || '-'}
                   </td>
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm hidden md:table-cell">${product.costPrice}</td>
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm hidden md:table-cell">${product.sellingPrice}</td>
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-green-600 hidden lg:table-cell">${product.expectedRevenue.toLocaleString()}</td>
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm space-x-1 sm:space-x-2">
-                    <button onClick={() => openQuantityModal(product.id, 'increase')} className="text-green-600 hover:text-green-900 p-1 hover:bg-green-50 rounded"><PlusIcon className="h-5 w-5 inline" /></button>
-                    <button onClick={() => openQuantityModal(product.id, 'decrease')} className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded"><MinusIcon className="h-5 w-5 inline" /></button>
-                    <button onClick={() => openEditModal(product)} className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded"><PencilIcon className="h-5 w-5 inline" /></button>
-                    <button onClick={() => handleDelete(product.id)} className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded"><TrashIcon className="h-5 w-5 inline" /></button>
+                  <td className="px-4 sm:px-6 py-5 whitespace-nowrap text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <span className={`text-base font-bold ${product.isLowStock ? 'text-red-600' : 'text-gray-900'}`}>
+                        {product.quantity}
+                      </span>
+                      {product.isLowStock && (
+                        <span className="px-2.5 py-1 bg-yellow-100 text-yellow-800 text-xs font-bold rounded-full">
+                          Low
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 sm:px-6 py-5 whitespace-nowrap text-right text-sm font-medium text-gray-700 hidden md:table-cell">
+                    ${product.costPrice.toFixed(2)}
+                  </td>
+                  <td className="px-4 sm:px-6 py-5 whitespace-nowrap text-right text-sm font-medium text-gray-700 hidden md:table-cell">
+                    ${product.sellingPrice.toFixed(2)}
+                  </td>
+                  <td className="px-4 sm:px-6 py-5 whitespace-nowrap text-right text-sm font-bold text-green-600 hidden lg:table-cell">
+                    ${product.expectedRevenue.toLocaleString()}
+                  </td>
+                  <td className="px-4 sm:px-6 py-5 whitespace-nowrap text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <button 
+                        onClick={() => openQuantityModal(product.id, 'increase')} 
+                        className="text-green-600 hover:text-green-800 p-2 hover:bg-green-50 rounded-xl transition-all duration-200"
+                      >
+                        <PlusIcon className="h-5 w-5" />
+                      </button>
+                      <button 
+                        onClick={() => openQuantityModal(product.id, 'decrease')} 
+                        className="text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded-xl transition-all duration-200"
+                      >
+                        <MinusIcon className="h-5 w-5" />
+                      </button>
+                      <button 
+                        onClick={() => openEditModal(product)} 
+                        className="text-blue-600 hover:text-blue-800 p-2 hover:bg-blue-50 rounded-xl transition-all duration-200"
+                      >
+                        <PencilIcon className="h-5 w-5" />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(product.id)} 
+                        className="text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded-xl transition-all duration-200"
+                      >
+                        <TrashIcon className="h-5 w-5" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -218,24 +257,111 @@ export default function ProductsPage() {
 
       {/* Product Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
-            <h2 className="text-xl font-bold mb-4 text-gray-900">{editingProduct ? 'Edit Product' : 'Add Product'}</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <input type="text" placeholder="Name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent" required />
-              <textarea placeholder="Description" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent" rows={2} />
-              <input type="text" placeholder="Category" value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent" />
-              <div className="grid grid-cols-2 gap-4">
-                <input type="number" placeholder="Quantity" value={formData.quantity} onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 0})} className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent" />
-                <input type="number" placeholder="Low Stock Threshold" value={formData.lowStockThreshold} onChange={(e) => setFormData({...formData, lowStockThreshold: parseInt(e.target.value) || 10})} className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent" />
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-7 max-w-md w-full mx-4 shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">
+                {editingProduct ? 'Edit Product' : 'Add Product'}
+              </h2>
+              <button 
+                onClick={() => { setShowModal(false); resetForm(); }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Product Name</label>
+                <input 
+                  type="text" 
+                  placeholder="Enter product name" 
+                  value={formData.name} 
+                  onChange={(e) => setFormData({...formData, name: e.target.value})} 
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200 text-base" 
+                  required 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                <textarea 
+                  placeholder="Enter product description" 
+                  value={formData.description} 
+                  onChange={(e) => setFormData({...formData, description: e.target.value})} 
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200 text-base resize-none" 
+                  rows={3} 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+                <input 
+                  type="text" 
+                  placeholder="Enter category" 
+                  value={formData.category} 
+                  onChange={(e) => setFormData({...formData, category: e.target.value})} 
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200 text-base" 
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <input type="number" step="0.01" placeholder="Cost Price" value={formData.costPrice} onChange={(e) => setFormData({...formData, costPrice: parseFloat(e.target.value) || 0})} className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent" />
-                <input type="number" step="0.01" placeholder="Selling Price" value={formData.sellingPrice} onChange={(e) => setFormData({...formData, sellingPrice: parseFloat(e.target.value) || 0})} className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent" />
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Quantity</label>
+                  <input 
+                    type="number" 
+                    placeholder="0" 
+                    value={formData.quantity} 
+                    onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 0})} 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200 text-base" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Low Stock Threshold</label>
+                  <input 
+                    type="number" 
+                    placeholder="10" 
+                    value={formData.lowStockThreshold} 
+                    onChange={(e) => setFormData({...formData, lowStockThreshold: parseInt(e.target.value) || 10})} 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200 text-base" 
+                  />
+                </div>
               </div>
-              <div className="flex justify-end space-x-3">
-                <button type="button" onClick={() => { setShowModal(false); resetForm(); }} className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-black text-white rounded-lg hover:bg-yellow-500 hover:text-black transition-colors">Save</button>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Cost Price</label>
+                  <input 
+                    type="number" 
+                    step="0.01" 
+                    placeholder="0.00" 
+                    value={formData.costPrice} 
+                    onChange={(e) => setFormData({...formData, costPrice: parseFloat(e.target.value) || 0})} 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200 text-base" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Selling Price</label>
+                  <input 
+                    type="number" 
+                    step="0.01" 
+                    placeholder="0.00" 
+                    value={formData.sellingPrice} 
+                    onChange={(e) => setFormData({...formData, sellingPrice: parseFloat(e.target.value) || 0})} 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200 text-base" 
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button 
+                  type="button" 
+                  onClick={() => { setShowModal(false); resetForm(); }} 
+                  className="px-6 py-3 border border-gray-300 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-200 text-gray-700"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-6 py-3 bg-black text-white rounded-xl font-semibold hover:bg-yellow-500 hover:text-black transition-all duration-300 shadow-md hover:shadow-lg"
+                >
+                  Save Product
+                </button>
               </div>
             </form>
           </div>
@@ -244,14 +370,58 @@ export default function ProductsPage() {
 
       {/* Quantity Modal */}
       {showQuantityModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
-            <h2 className="text-xl font-bold mb-4 text-gray-900">{quantityAction === 'increase' ? 'Add Stock' : 'Remove Stock'}</h2>
-            <input type="number" placeholder="Quantity" value={quantityUpdate.quantity} onChange={(e) => setQuantityUpdate({...quantityUpdate, quantity: parseInt(e.target.value) || 0})} className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent" />
-            <input type="text" placeholder="Notes (optional)" value={quantityUpdate.notes} onChange={(e) => setQuantityUpdate({...quantityUpdate, notes: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent" />
-            <div className="flex justify-end space-x-3">
-              <button onClick={() => setShowQuantityModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
-              <button onClick={handleQuantityUpdate} className={`px-4 py-2 rounded-lg text-white ${quantityAction === 'increase' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} transition-colors`}>Confirm</button>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-7 max-w-md w-full mx-4 shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">
+                {quantityAction === 'increase' ? 'Add Stock' : 'Remove Stock'}
+              </h2>
+              <button 
+                onClick={() => setShowQuantityModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="space-y-5">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Quantity</label>
+                <input 
+                  type="number" 
+                  placeholder="0" 
+                  value={quantityUpdate.quantity} 
+                  onChange={(e) => setQuantityUpdate({...quantityUpdate, quantity: parseInt(e.target.value) || 0})} 
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200 text-base" 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Notes (optional)</label>
+                <input 
+                  type="text" 
+                  placeholder="Add notes about this change" 
+                  value={quantityUpdate.notes} 
+                  onChange={(e) => setQuantityUpdate({...quantityUpdate, notes: e.target.value})} 
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200 text-base" 
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button 
+                  onClick={() => setShowQuantityModal(false)} 
+                  className="px-6 py-3 border border-gray-300 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-200 text-gray-700"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleQuantityUpdate} 
+                  className={`px-6 py-3 rounded-xl font-semibold text-white transition-all duration-300 shadow-md hover:shadow-lg ${
+                    quantityAction === 'increase' 
+                      ? 'bg-green-600 hover:bg-green-700' 
+                      : 'bg-red-600 hover:bg-red-700'
+                  }`}
+                >
+                  Confirm
+                </button>
+              </div>
             </div>
           </div>
         </div>

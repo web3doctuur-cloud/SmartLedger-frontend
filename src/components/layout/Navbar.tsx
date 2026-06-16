@@ -27,32 +27,39 @@ const Navbar = () => {
     { href: '/products', label: 'Products', icon: CubeIcon, showWhen: isAuthenticated },
     { href: '/tasks', label: 'Tasks', icon: CheckCircleIcon, showWhen: isAuthenticated },
     { href: '/accounts', label: 'Accounts', icon: BuildingLibraryIcon, showWhen: isAuthenticated },
-    { href: '/journal', label: 'Journal Entries', icon: BookOpenIcon, showWhen: isAuthenticated },
+    { href: '/journal', label: 'Journal', icon: BookOpenIcon, showWhen: isAuthenticated },
     { href: '/reports', label: 'Reports', icon: DocumentTextIcon, showWhen: isAuthenticated },
     { href: '/analytics', label: 'Analytics', icon: ChartBarIcon, showWhen: isAdmin },
   ];
 
   return (
-    <nav className="bg-black text-white shadow-lg">
+    <nav className="bg-black text-white shadow-xl sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+        <div className="flex justify-between h-16 sm:h-20">
           <div className="flex items-center">
-            <Link href="/" className="flex items-center space-x-2">
-              <span className="text-2xl font-bold text-yellow-500">Smart</span>
-              <span className="text-2xl font-bold text-white">Ledger</span>
+            <Link href="/" className="flex items-center space-x-2 group">
+              <div className="h-10 w-10 bg-gradient-to-br from-yellow-500 to-yellow-400 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-200">
+                <span className="text-xl font-bold text-black">SL</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-lg sm:text-xl font-extrabold tracking-tight">
+                  <span className="text-yellow-500">Smart</span>
+                  <span className="text-white">Ledger</span>
+                </span>
+              </div>
             </Link>
           </div>
 
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-1 lg:space-x-2">
             {navLinks.map((link) => (
               link.showWhen && (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={`flex items-center space-x-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
                     pathname === link.href
-                      ? 'bg-yellow-500 text-black'
-                      : 'text-gray-300 hover:bg-yellow-500 hover:text-black'
+                      ? 'bg-yellow-500 text-black shadow-md'
+                      : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                   }`}
                 >
                   <link.icon className="h-5 w-5" />
@@ -60,72 +67,93 @@ const Navbar = () => {
                 </Link>
               )
             ))}
-            {isAuthenticated ? (
-              <button
-                onClick={logout}
-                className="flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium bg-red-600 hover:bg-red-700 transition-colors"
-              >
-                <ArrowRightOnRectangleIcon className="h-5 w-5" />
-                <span>Logout</span>
-              </button>
-            ) : (
-              <Link
-                href="/login"
-                className="flex items-center space-x-1 px-4 py-2 rounded-md text-sm font-medium bg-yellow-500 text-black hover:bg-yellow-400 transition-colors"
-              >
-                Login
-              </Link>
-            )}
+            <div className="ml-4 flex items-center space-x-2">
+              {isAuthenticated ? (
+                <button
+                  onClick={logout}
+                  className="flex items-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-red-600 hover:bg-red-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                >
+                  <ArrowRightOnRectangleIcon className="h-5 w-5" />
+                  <span>Logout</span>
+                </button>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="flex items-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="flex items-center space-x-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-yellow-500 to-yellow-400 text-black hover:from-yellow-400 hover:to-yellow-300 transition-all duration-200 shadow-md hover:shadow-lg"
+                  >
+                    Sign up
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
 
           <div className="md:hidden flex items-center">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-gray-300 hover:text-white focus:outline-none"
+              className="text-gray-300 hover:text-white focus:outline-none p-2 rounded-lg hover:bg-gray-800 transition-all duration-200"
             >
-              {isOpen ? <XMarkIcon className="h-6 w-6" /> : <Bars3Icon className="h-6 w-6" />}
+              {isOpen ? <XMarkIcon className="h-7 w-7" /> : <Bars3Icon className="h-7 w-7" />}
             </button>
           </div>
         </div>
       </div>
 
       {isOpen && (
-        <div className="md:hidden bg-black border-t border-gray-800">
-          <div className="px-2 pt-2 pb-3 space-y-1">
+        <div className="md:hidden bg-black border-t border-gray-800 shadow-2xl">
+          <div className="px-3 pt-3 pb-4 space-y-1.5">
             {navLinks.map((link) => (
               link.showWhen && (
                 <Link
                   key={link.href}
                   href={link.href}
                   onClick={() => setIsOpen(false)}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium ${
+                  className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-base font-semibold transition-all duration-200 ${
                     pathname === link.href
                       ? 'bg-yellow-500 text-black'
-                      : 'text-gray-300 hover:bg-yellow-500 hover:text-black'
+                      : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                   }`}
                 >
-                  <link.icon className="h-5 w-5" />
+                  <link.icon className="h-6 w-6" />
                   <span>{link.label}</span>
                 </Link>
               )
             ))}
-            {isAuthenticated ? (
-              <button
-                onClick={() => { logout(); setIsOpen(false); }}
-                className="flex items-center space-x-2 w-full px-3 py-2 rounded-md text-base font-medium bg-red-600 hover:bg-red-700"
-              >
-                <ArrowRightOnRectangleIcon className="h-5 w-5" />
-                <span>Logout</span>
-              </button>
-            ) : (
-              <Link
-                href="/login"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium bg-yellow-500 text-black hover:bg-yellow-400"
-              >
-                Login
-              </Link>
-            )}
+            <div className="pt-2 space-y-1.5">
+              {isAuthenticated ? (
+                <button
+                  onClick={() => { logout(); setIsOpen(false); }}
+                  className="flex items-center space-x-3 w-full px-4 py-3 rounded-xl text-base font-semibold bg-red-600 hover:bg-red-700 transition-all duration-200"
+                >
+                  <ArrowRightOnRectangleIcon className="h-6 w-6" />
+                  <span>Logout</span>
+                </button>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center space-x-3 px-4 py-3 rounded-xl text-base font-semibold text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    href="/register"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center space-x-3 px-4 py-3 rounded-xl text-base font-semibold bg-gradient-to-r from-yellow-500 to-yellow-400 text-black hover:from-yellow-400 hover:to-yellow-300 transition-all duration-200"
+                  >
+                    Sign up
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}

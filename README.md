@@ -1,36 +1,153 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SmartLedger Frontend
+
+A modern, premium business management system built with Next.js 16, TypeScript, and Tailwind CSS.
+
+## Features
+
+- 📊 **Dashboard**: Real-time business insights, financial summaries, and low-stock alerts
+- 📦 **Products**: Complete inventory management with stock adjustments
+- ✅ **Tasks**: Todo and task management
+- 🏦 **Accounts**: Chart of accounts management
+- 📒 **Journal Entries**: Record and approve financial transactions
+- 📈 **Reports**: Income statements, balance sheets, and more
+- 📉 **Analytics**: Data visualization and business analytics
+
+## Tech Stack
+
+- **Framework**: Next.js 16 with App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Icons**: Heroicons
+- **Charts**: Recharts
+- **Notifications**: React Hot Toast
+- **HTTP Client**: Axios
+- **State Management**: React Context API
+- **JWT Handling**: jwt-decode
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- npm or yarn
+
+### Installation
+
+1. Navigate to the frontend directory:
+   ```bash
+   cd smartledger-frontend-new
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Environment Configuration:
+
+   Create a `.env.local` file in the root directory with your backend API URL:
+   ```env
+   NEXT_PUBLIC_API_URL=https://smartledger-api-o7hy.onrender.com/api
+   ```
+
+### Running the App
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The app will be available at http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Build for Production
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm start
+```
 
-## Learn More
+### Linting & Type Checking
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run lint
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+smartledger-frontend-new/
+├── src/
+│   ├── app/
+│   │   ├── login/
+│   │   ├── register/
+│   │   ├── dashboard/
+│   │   ├── products/
+│   │   ├── tasks/
+│   │   ├── accounts/
+│   │   ├── journal/
+│   │   ├── reports/
+│   │   ├── analytics/
+│   │   ├── globals.css
+│   │   └── layout.tsx
+│   ├── components/
+│   │   └── layout/
+│   ├── context/
+│   │   └── AuthContext.tsx
+│   └── services/
+│       └── api.ts
+├── .env.local
+├── next.config.ts
+├── package.json
+└── README.md
+```
 
-## Deploy on Vercel
+## Backend API
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The frontend connects to the SmartLedger backend API at: https://smartledger-api-o7hy.onrender.com
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Swagger documentation is available at: https://smartledger-api-o7hy.onrender.com/swagger/index.html
+
+## Usage
+
+1. **Register an Account**: Go to `/register` to create a new account
+2. **Log In**: Sign in with your credentials at `/login`
+3. **Explore Features**: Navigate through the dashboard and other sections using the navbar
+
+## Features Breakdown
+
+### Dashboard
+- Overview of products, inventory value, expected revenue, and pending tasks
+- Financial summary (income, expenses, net profit, profit margin)
+- Low stock alerts
+
+### Products
+- Create, edit, and delete products
+- Adjust inventory levels (increase/decrease)
+- Track low stock items
+
+### Tasks
+- Todo list management
+- Mark tasks as in progress or completed
+
+### Accounts
+- Manage chart of accounts
+- Add, edit, delete accounts
+
+### Journal Entries
+- Record financial transactions with line items
+- Approve journal entries
+- View detailed entry information
+
+### Reports
+- Income Statement
+- Balance Sheet
+- Trial Balance
+- Inventory Summary
+- Sales Reports
+- Expenses Reports
+
+### Analytics
+- Data visualizations for business insights
+
+## License
+
+MIT
