@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = "https://smartledger-api-o7hy.onrender.com/api";
 
 const api = axios.create({
   baseURL: API_URL,
@@ -16,6 +16,12 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  console.log('Request Config:', {
+    baseURL: config.baseURL,
+    url: config.url,
+    fullURL: config.baseURL + config.url,
+    method: config.method,
+  });
   return config;
 });
 
@@ -26,7 +32,13 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    console.error('API Error:', error.config?.url, error.response?.status, error.response?.data);
+    console.error('API Error:', {
+      url: error.config?.url,
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+      code: error.code,
+    });
     return Promise.reject(error);
   }
 );
