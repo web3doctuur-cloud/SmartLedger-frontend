@@ -19,7 +19,7 @@ api.interceptors.request.use((config) => {
   console.log('Request Config:', {
     baseURL: config.baseURL,
     url: config.url,
-    fullURL: config.baseURL + config.url,
+    fullURL: `${config.baseURL ?? ''}${config.url ?? ''}`,
     method: config.method,
   });
   return config;
