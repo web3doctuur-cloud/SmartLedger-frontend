@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useTransition } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'next/navigation';
 import api from '../../services/api';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, PieLabelRenderProps } from 'recharts';
 import { Product } from '../../types';
 
 const COLORS = ['#000000', '#F59E0B', '#1F2937', '#374151', '#4B5563', '#6B7280'];
@@ -68,10 +68,11 @@ export default function AnalyticsPage() {
   }, [isAuthenticated, isAdmin, fetchAnalytics]);
 
   // Custom label formatter to fix TypeScript error
-  const renderLabel = (entry: ChartData) => {
-    const percent = entry.percent;
-    if (percent === undefined) return entry.name;
-    return `${entry.name}: ${(percent * 100).toFixed(0)}%`;
+  const renderLabel = (props: PieLabelRenderProps) => {
+    const { name, percent } = props as { name?: string; percent?: number };
+    if (name === undefined) return '';
+    if (percent === undefined) return name;
+    return `${name}: ${(percent * 100).toFixed(0)}%`;
   };
 
   if (isLoading || loading) {
