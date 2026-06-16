@@ -118,7 +118,7 @@ export default function AnalyticsPage() {
                     <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number) => `$${value.toLocaleString()}`} />
+                <Tooltip formatter={(value: unknown) => value ? `$${Number(value).toLocaleString()}` : ''} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
@@ -146,7 +146,7 @@ export default function AnalyticsPage() {
                     <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number) => `$${value.toLocaleString()}`} />
+                <Tooltip formatter={(value: unknown) => value ? `$${Number(value).toLocaleString()}` : ''} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
