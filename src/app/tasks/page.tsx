@@ -106,7 +106,7 @@ export default function TasksPage() {
     return 'text-gray-600 bg-gray-50';
   };
 
-  if (isLoading || loading) return <div className="flex justify-center items-center h-96"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 border-l-2 border-transparent"></div></div>;
+  if (isLoading || loading) return <div className="flex justify-center items-center h-96"><div className="animate-spin rounded-full h-12 w-12 border-2 border-yellow-500 border-t-transparent"></div></div>;
 
   const pendingTasks = tasks.filter(t => t.status !== 'COMPLETED');
   const completedTasks = tasks.filter(t => t.status === 'COMPLETED');
@@ -126,7 +126,11 @@ export default function TasksPage() {
 
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">Pending Tasks</h2>
-        {pendingTasks.map(task => (
+        {pendingTasks.length === 0 ? (
+          <div className="text-center py-12 bg-white rounded-xl border border-gray-100">
+            <p className="text-gray-500">No pending tasks. Click &quot;+ Add Task&quot; to create one.</p>
+          </div>
+        ) : pendingTasks.map(task => (
           <div key={task.id} className="bg-white rounded-xl shadow-md p-6 border border-gray-100 hover:shadow-lg transition-shadow">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div className="flex-1">

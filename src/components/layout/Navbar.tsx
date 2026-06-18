@@ -20,7 +20,7 @@ import {
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
-  const { isAuthenticated, isAdmin, logout } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
 
   const navLinks = [
     { href: '/', label: 'Dashboard', icon: HomeIcon, showWhen: true },
@@ -29,7 +29,7 @@ const Navbar = () => {
     { href: '/accounts', label: 'Accounts', icon: BuildingLibraryIcon, showWhen: isAuthenticated },
     { href: '/journal', label: 'Journal', icon: BookOpenIcon, showWhen: isAuthenticated },
     { href: '/reports', label: 'Reports', icon: DocumentTextIcon, showWhen: isAuthenticated },
-    { href: '/analytics', label: 'Analytics', icon: ChartBarIcon, showWhen: isAdmin },
+    { href: '/analytics', label: 'Analytics', icon: ChartBarIcon, showWhen: isAuthenticated },
   ];
 
   return (

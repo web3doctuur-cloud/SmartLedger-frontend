@@ -12,9 +12,11 @@ export interface Product {
   profitMargin: number;
   isLowStock: boolean;
   lowStockThreshold: number;
+  imageUrl?: string | null;
+  sku?: string | null;
   isActive: boolean;
   createdAt: string;
-  updatedAt?: string;
+  updatedAt?: string | null;
 }
 
 export interface Task {
@@ -65,50 +67,60 @@ export interface BalanceSheet {
   liabilities: { total: number; details: Array<{ accountName: string; balance: number }> };
   equity: { total: number; details: Array<{ accountName: string; balance: number }> };
   isBalanced: boolean;
+  totalLiabilitiesAndEquity?: number;
 }
 
-export type AccountType = 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
+export type AccountType = 'Asset' | 'Liability' | 'Equity' | 'Income' | 'Expense';
 export type EntryType = 'DEBIT' | 'CREDIT';
 
 export interface Account {
   id: number;
+  accountCode: string;
   name: string;
-  code: string;
-  type: AccountType;
-  description?: string;
+  type: string;
+  normalSide: 'DEBIT' | 'CREDIT' | string;
+  parentAccountId?: number | null;
+  parentAccountName?: string | null;
   balance: number;
-  isActive: boolean;
   createdAt: string;
-  updatedAt?: string;
+  isActive: boolean;
+  updatedAt?: string | null;
 }
 
 export interface JournalEntryLine {
   id: number;
   accountId: number;
-  accountName?: string;
-  type: EntryType;
-  amount: number;
+  accountCode: string;
+  accountName: string;
+  accountType: string;
+  debit: number;
+  credit: number;
+  lineDescription?: string | null;
+  referenceNumber?: string | null;
+  taxAmount: number;
+  totalAmount: number;
 }
 
 export interface JournalEntry {
   id: number;
-  date: string;
+  entryNumber: string;
+  entryDate: string;
   description?: string;
-  reference?: string;
   lines: JournalEntryLine[];
   isApproved: boolean;
   approvedAt?: string;
   createdAt: string;
-  createdBy: string;
 }
 
 export interface CreateJournalEntryDto {
-  date: string;
-  description?: string;
-  reference?: string;
+  entryDate: string;
+  description: string;
   lines: Array<{
     accountId: number;
-    type: EntryType;
-    amount: number;
+    debit: number;
+    credit: number;
+    lineDescription?: string;
+    referenceNumber?: string;
+    taxAmount?: number;
   }>;
 }

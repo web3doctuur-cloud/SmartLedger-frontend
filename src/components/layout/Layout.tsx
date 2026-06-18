@@ -1,12 +1,15 @@
 'use client';
 
 import { useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { AuthProvider, useAuth } from '../../context/AuthContext';
 import Navbar from './Navbar';
 import { Toaster } from 'react-hot-toast';
 
 function InnerLayout({ children }: { children: React.ReactNode }) {
   const { initializeAuth } = useAuth();
+  const pathname = usePathname();
+  const isAuthPage = pathname === '/login' || pathname === '/register';
 
   useEffect(() => {
     initializeAuth();
@@ -14,8 +17,8 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      {!isAuthPage && <Navbar />}
+      <main className={isAuthPage ? '' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8'}>
         {children}
       </main>
       <Toaster 

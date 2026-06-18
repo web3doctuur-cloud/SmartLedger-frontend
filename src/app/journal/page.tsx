@@ -6,7 +6,13 @@ import { useRouter } from 'next/navigation';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 import { TrashIcon, PlusIcon, CheckCircleIcon, EyeIcon } from '@heroicons/react/24/outline';
-import { Account, JournalEntry, EntryType } from '../../types';
+import { Account, CreateJournalEntryDto, EntryType, JournalEntry } from '../../types';
+
+interface FormLine {
+  accountId: number;
+  type: EntryType;
+  amount: number;
+}
 
 export default function JournalPage() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -17,18 +23,12 @@ export default function JournalPage() {
   const [showModal, setShowModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState<JournalEntry | null>(null);
   const [formData, setFormData] = useState<{
-    date: string,
-    description: string,
-    reference: string,
-    lines: Array<{
-      accountId: number;
-      type: EntryType;
-      amount: number;
-    }>,
+    entryDate: string;
+    description: string;
+    lines: FormLine[];
   }>({
-    date: new Date().toISOString().split('T')[0],
+    entryDate: new Date().toISOString().split('T')[0],
     description: '',
-    reference: '',
     lines: [],
   });
   const [, startTransition] = useTransition();
@@ -71,7 +71,7 @@ export default function JournalPage() {
     }));
   };
 
-  const updateLine = (index: number, field: keyof typeof formData.lines[0], value: string | number) => {
+  const updateLine = (index: number, field: keyof FormLine, value: string | number) => {
     setFormData(prev => ({
       ...prev,
       lines: prev.lines.map((line, i) =>
@@ -87,6 +87,13 @@ export default function JournalPage() {
     }));
   };
 
+  const totalDebits = formData.lines
+    .filter(l => l.type === 'DEBIT')
+    .reduce((sum, l) => sum + l.amount, 0);
+  const totalCredits = formData.lines
+    .filter(l => l.type === 'CREDIT')
+    .reduce((sum, l) => sum + l.amount, 0);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.lines.length < 2) {
@@ -94,15 +101,23 @@ export default function JournalPage() {
       return;
     }
 
-    const debits = formData.lines.filter(l => l.type === 'DEBIT').reduce((sum, l) => sum + l.amount, 0);
-    const credits = formData.lines.filter(l => l.type === 'CREDIT').reduce((sum, l) => sum + l.amount, 0);
-    if (Math.abs(debits - credits) > 0.01) {
+    if (Math.abs(totalDebits - totalCredits) > 0.01) {
       toast.error('Debits and credits must be equal');
       return;
     }
 
+    const payload: CreateJournalEntryDto = {
+      entryDate: formData.entryDate,
+      description: formData.description,
+      lines: formData.lines.map(line => ({
+        accountId: line.accountId,
+        debit: line.type === 'DEBIT' ? line.amount : 0,
+        credit: line.type === 'CREDIT' ? line.amount : 0,
+      })),
+    };
+
     try {
-      await api.post('/JournalEntries', formData);
+      await api.post('/JournalEntries', payload);
       toast.success('Journal entry created successfully');
       setShowModal(false);
       resetForm();
@@ -136,9 +151,8 @@ export default function JournalPage() {
 
   const resetForm = () => {
     setFormData({
-      date: new Date().toISOString().split('T')[0],
+      entryDate: new Date().toISOString().split('T')[0],
       description: '',
-      reference: '',
       lines: [],
     });
   };
@@ -147,10 +161,16 @@ export default function JournalPage() {
     return type === 'DEBIT' ? 'text-blue-600 bg-blue-50' : 'text-orange-600 bg-orange-50';
   };
 
+  const getLineType = (line: JournalEntry['lines'][0]): EntryType =>
+    line.debit > 0 ? 'DEBIT' : 'CREDIT';
+
+  const getLineAmount = (line: JournalEntry['lines'][0]): number =>
+    line.debit > 0 ? line.debit : line.credit;
+
   if (isLoading || loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 border-l-2 border-transparent"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-2 border-yellow-500 border-t-transparent"></div>
       </div>
     );
   }
@@ -164,74 +184,79 @@ export default function JournalPage() {
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="bg-black text-white px-4 py-2 rounded-lg hover:bg-yellow-500 hover:text-black transition-colors w-full sm:w-auto"
+          className="bg-black text-white px-4 py-2 rounded-lg hover:bg-yellow-500 hover:text-black transition-colors w-full sm:w-auto flex items-center justify-center gap-2"
         >
-          <PlusIcon className="h-5 w-5 inline mr-2" />
+          <PlusIcon className="h-5 w-5" />
           Add Journal Entry
         </button>
       </div>
 
       <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 hover:shadow-lg transition-shadow">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Reference</th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-4 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {entries.map((entry) => (
-                <tr key={entry.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{new Date(entry.date).toLocaleDateString()}</div>
-                  </td>
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{entry.description || 'No description'}</div>
-                  </td>
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap hidden sm:table-cell">
-                    <div className="text-sm text-gray-500">{entry.reference || '-'}</div>
-                  </td>
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs rounded-full ${entry.isApproved ? 'text-green-600 bg-green-50' : 'text-yellow-600 bg-yellow-50'}`}>
-                      {entry.isApproved ? 'Approved' : 'Pending'}
-                    </span>
-                  </td>
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-center text-sm space-x-2">
-                    <button
-                      onClick={() => setShowDetailsModal(entry)}
-                      className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded"
-                    >
-                      <EyeIcon className="h-5 w-5 inline" />
-                    </button>
-                    {!entry.isApproved && (
-                      <button
-                        onClick={() => handleApprove(entry.id)}
-                        className="text-green-600 hover:text-green-900 p-1 hover:bg-green-50 rounded"
-                      >
-                        <CheckCircleIcon className="h-5 w-5 inline" />
-                      </button>
-                    )}
-                    <button
-                      onClick={() => handleDelete(entry.id)}
-                      className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded"
-                    >
-                      <TrashIcon className="h-5 w-5 inline" />
-                    </button>
-                  </td>
+        {entries.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500">No journal entries yet. Click &quot;Add Journal Entry&quot; to create one.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Entry #</th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-4 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {entries.map((entry) => (
+                  <tr key={entry.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{new Date(entry.entryDate).toLocaleDateString()}</div>
+                    </td>
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap hidden sm:table-cell">
+                      <div className="text-sm font-mono text-gray-500">{entry.entryNumber}</div>
+                    </td>
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{entry.description || 'No description'}</div>
+                    </td>
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 text-xs rounded-full ${entry.isApproved ? 'text-green-600 bg-green-50' : 'text-yellow-600 bg-yellow-50'}`}>
+                        {entry.isApproved ? 'Approved' : 'Pending'}
+                      </span>
+                    </td>
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-center text-sm space-x-2">
+                      <button
+                        onClick={() => setShowDetailsModal(entry)}
+                        className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded"
+                      >
+                        <EyeIcon className="h-5 w-5 inline" />
+                      </button>
+                      {!entry.isApproved && (
+                        <button
+                          onClick={() => handleApprove(entry.id)}
+                          className="text-green-600 hover:text-green-900 p-1 hover:bg-green-50 rounded"
+                        >
+                          <CheckCircleIcon className="h-5 w-5 inline" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDelete(entry.id)}
+                        className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded"
+                      >
+                        <TrashIcon className="h-5 w-5 inline" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
-      {/* Journal Entry Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4 text-gray-900">Add Journal Entry</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -240,20 +265,10 @@ export default function JournalPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
                   <input
                     type="date"
-                    value={formData.date}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    value={formData.entryDate}
+                    onChange={(e) => setFormData({ ...formData, entryDate: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
                     required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Reference</label>
-                  <input
-                    type="text"
-                    placeholder="Optional reference"
-                    value={formData.reference}
-                    onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -265,6 +280,7 @@ export default function JournalPage() {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
                   rows={2}
+                  required
                 />
               </div>
 
@@ -274,76 +290,84 @@ export default function JournalPage() {
                   <button
                     type="button"
                     onClick={addLine}
-                    className="bg-black text-white px-3 py-1 rounded-lg hover:bg-yellow-500 hover:text-black transition-colors text-sm"
+                    disabled={accounts.length === 0}
+                    className="bg-black text-white px-3 py-1 rounded-lg hover:bg-yellow-500 hover:text-black transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <PlusIcon className="h-4 w-4 inline mr-1" />
                     Add Line
                   </button>
                 </div>
 
+                {accounts.length === 0 && (
+                  <p className="text-sm text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                    Create accounts first before adding journal entries.
+                  </p>
+                )}
+
                 <div className="space-y-3">
                   {formData.lines.map((line, index) => (
-                  <div key={index} className="grid grid-cols-12 gap-2 items-end">
-                    <div className="col-span-4">
-                      <label className="block text-xs text-gray-500 mb-1">Account</label>
-                      <select
-                        value={line.accountId}
-                        onChange={(e) => updateLine(index, 'accountId', parseInt(e.target.value))}
-                        className="w-full px-2 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 focus:border-transparent"
-                      >
-                        {accounts.map(acc => (
-                          <option key={acc.id} value={acc.id}>{acc.code} - {acc.name}</option>
-                        ))}
-                      </select>
+                    <div key={index} className="grid grid-cols-12 gap-2 items-end">
+                      <div className="col-span-4">
+                        <label className="block text-xs text-gray-500 mb-1">Account</label>
+                        <select
+                          value={line.accountId}
+                          onChange={(e) => updateLine(index, 'accountId', parseInt(e.target.value))}
+                          className="w-full px-2 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 focus:border-transparent"
+                        >
+                          {accounts.map(acc => (
+                            <option key={acc.id} value={acc.id}>{acc.accountCode} - {acc.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-xs text-gray-500 mb-1">Type</label>
+                        <select
+                          value={line.type}
+                          onChange={(e) => updateLine(index, 'type', e.target.value as EntryType)}
+                          className="w-full px-2 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 focus:border-transparent"
+                        >
+                          <option value="DEBIT">Debit</option>
+                          <option value="CREDIT">Credit</option>
+                        </select>
+                      </div>
+                      <div className="col-span-4">
+                        <label className="block text-xs text-gray-500 mb-1">Amount</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={line.amount}
+                          onChange={(e) => updateLine(index, 'amount', parseFloat(e.target.value) || 0)}
+                          className="w-full px-2 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <button
+                          type="button"
+                          onClick={() => removeLine(index)}
+                          className="w-full px-2 py-1 border border-gray-300 rounded-lg text-red-600 hover:bg-red-50 text-sm"
+                        >
+                          <TrashIcon className="h-4 w-4 inline" />
+                        </button>
+                      </div>
                     </div>
-                    <div className="col-span-2">
-                      <label className="block text-xs text-gray-500 mb-1">Type</label>
-                      <select
-                        value={line.type}
-                        onChange={(e) => updateLine(index, 'type', e.target.value as EntryType)}
-                        className="w-full px-2 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 focus:border-transparent"
-                      >
-                        <option value="DEBIT">Debit</option>
-                        <option value="CREDIT">Credit</option>
-                      </select>
-                    </div>
-                    <div className="col-span-4">
-                      <label className="block text-xs text-gray-500 mb-1">Amount</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={line.amount}
-                        onChange={(e) => updateLine(index, 'amount', parseFloat(e.target.value) || 0)}
-                        className="w-full px-2 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 focus:border-transparent"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <button
-                        type="button"
-                        onClick={() => removeLine(index)}
-                        className="w-full px-2 py-1 border border-gray-300 rounded-lg text-red-600 hover:bg-red-50 text-sm"
-                      >
-                        <TrashIcon className="h-4 w-4 inline" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  ))}
                 </div>
 
                 {formData.lines.length > 0 && (
                   <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                     <div className="flex justify-between text-sm">
                       <span className="font-medium">Total Debits:</span>
-                      <span className="font-medium">${formData.lines.filter(l => l.type === 'DEBIT').reduce((sum, l) => sum + l.amount, 0).toLocaleString()}</span>
+                      <span className="font-medium">${totalDebits.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="font-medium">Total Credits:</span>
-                      <span className="font-medium">${formData.lines.filter(l => l.type === 'CREDIT').reduce((sum, l) => sum + l.amount, 0).toLocaleString()}</span>
+                      <span className="font-medium">${totalCredits.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-sm font-bold">
                       <span>Difference:</span>
-                      <span className={Math.abs(formData.lines.filter(l => l.type === 'DEBIT').reduce((sum, l) => sum + l.amount, 0) - formData.lines.filter(l => l.type === 'CREDIT').reduce((sum, l) => sum + l.amount, 0)) < 0.01 ? 'text-green-600' : 'text-red-600'}>
-                        ${(formData.lines.filter(l => l.type === 'DEBIT').reduce((sum, l) => sum + l.amount, 0) - formData.lines.filter(l => l.type === 'CREDIT').reduce((sum, l) => sum + l.amount, 0)).toLocaleString()}
+                      <span className={Math.abs(totalDebits - totalCredits) < 0.01 ? 'text-green-600' : 'text-red-600'}>
+                        ${Math.abs(totalDebits - totalCredits).toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -363,7 +387,8 @@ export default function JournalPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-black text-white rounded-lg hover:bg-yellow-500 hover:text-black transition-colors"
+                  disabled={accounts.length === 0}
+                  className="px-4 py-2 bg-black text-white rounded-lg hover:bg-yellow-500 hover:text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Save
                 </button>
@@ -373,26 +398,23 @@ export default function JournalPage() {
         </div>
       )}
 
-      {/* Details Modal */}
       {showDetailsModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 shadow-2xl">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4 text-gray-900">Journal Entry Details</h2>
             <div className="space-y-3">
               <div className="flex justify-between text-sm">
+                <span className="font-medium text-gray-700">Entry #:</span>
+                <span className="font-mono">{showDetailsModal.entryNumber}</span>
+              </div>
+              <div className="flex justify-between text-sm">
                 <span className="font-medium text-gray-700">Date:</span>
-                <span>{new Date(showDetailsModal.date).toLocaleDateString()}</span>
+                <span>{new Date(showDetailsModal.entryDate).toLocaleDateString()}</span>
               </div>
               {showDetailsModal.description && (
                 <div className="flex justify-between text-sm">
                   <span className="font-medium text-gray-700">Description:</span>
                   <span>{showDetailsModal.description}</span>
-                </div>
-              )}
-              {showDetailsModal.reference && (
-                <div className="flex justify-between text-sm">
-                  <span className="font-medium text-gray-700">Reference:</span>
-                  <span>{showDetailsModal.reference}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm">
@@ -415,18 +437,20 @@ export default function JournalPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {showDetailsModal.lines.map((line, index) => (
-                      <tr key={index} className="hover:bg-gray-50">
+                    {showDetailsModal.lines.map((line) => (
+                      <tr key={line.id} className="hover:bg-gray-50">
                         <td className="px-3 py-2 whitespace-nowrap">
                           <span className="text-sm text-gray-900">
-                            {accounts.find(acc => acc.id === line.accountId)?.name || line.accountId}
+                            {line.accountCode} - {line.accountName}
                           </span>
                         </td>
                         <td className="px-3 py-2 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs rounded-full ${getEntryTypeColor(line.type)}`}>{line.type}</span>
+                          <span className={`px-2 py-1 text-xs rounded-full ${getEntryTypeColor(getLineType(line))}`}>
+                            {getLineType(line)}
+                          </span>
                         </td>
                         <td className="px-3 py-2 whitespace-nowrap text-right">
-                          <span className="text-sm font-medium text-gray-900">${line.amount.toLocaleString()}</span>
+                          <span className="text-sm font-medium text-gray-900">${getLineAmount(line).toLocaleString()}</span>
                         </td>
                       </tr>
                     ))}
@@ -435,7 +459,7 @@ export default function JournalPage() {
               </div>
             </div>
 
-            <div className="flex justify-end pt-4 border-t">
+            <div className="flex justify-end pt-4 border-t mt-4">
               <button
                 onClick={() => setShowDetailsModal(null)}
                 className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"

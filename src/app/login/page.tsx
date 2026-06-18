@@ -20,7 +20,7 @@ export default function LoginPage() {
     const result = await login(email, password);
     if (result.success) {
       toast.success('Login successful!');
-      router.push('/');
+      router.replace('/');
     } else {
       toast.error(result.error || 'Login failed');
     }
@@ -44,6 +44,7 @@ export default function LoginPage() {
             </Link>
           </p>
         </div>
+
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 shadow-hover-lift">
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
@@ -74,7 +75,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200 text-base"
-                  placeholder="••••••••"
+                  placeholder="Password"
                 />
               </div>
             </div>

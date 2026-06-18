@@ -17,16 +17,17 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     setLoading(true);
     const result = await register(email, password);
-    
+
     if (result.success) {
       toast.success('Registration successful!');
-      router.push('/');
+      router.replace('/');
     } else {
       toast.error(result.error || 'Registration failed');
     }
+
     setLoading(false);
   };
 
@@ -47,11 +48,10 @@ export default function RegisterPage() {
             </Link>
           </p>
         </div>
-        
+
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 shadow-hover-lift">
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
-              {/* Email Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Email address
@@ -65,20 +65,19 @@ export default function RegisterPage() {
                   placeholder="you@example.com"
                 />
               </div>
-              
-              {/* Password Field with Show/Hide */}
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Password
                 </label>
                 <div className="relative">
                   <input
-                    type={showPassword ? "text" : "password"}
+                    type={showPassword ? 'text' : 'password'}
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200 text-base pr-12"
-                    placeholder="••••••••"
+                    placeholder="At least 6 characters"
                   />
                   <button
                     type="button"
@@ -98,9 +97,6 @@ export default function RegisterPage() {
                   </p>
                   <ul className="text-xs sm:text-sm text-yellow-700 space-y-1 list-disc list-inside">
                     <li>At least 6 characters</li>
-                    <li>Uppercase letter (A-Z)</li>
-                    <li>Lowercase letter (a-z)</li>
-                    <li>Special character (e.g., @, #, !)</li>
                   </ul>
                 </div>
               </div>

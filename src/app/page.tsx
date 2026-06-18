@@ -96,7 +96,7 @@ export default function DashboardPage() {
   if (isLoading || loadingStats) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-        <div className="animate-spin rounded-full h-14 w-14 border-b-3 border-l-3 border-yellow-500 border-transparent"></div>
+        <div className="animate-spin rounded-full h-14 w-14 border-2 border-yellow-500 border-t-transparent"></div>
         <p className="text-gray-500 text-lg font-medium animate-pulse">Loading dashboard...</p>
       </div>
     );
@@ -180,7 +180,7 @@ export default function DashboardPage() {
               <ExclamationTriangleIcon className="h-6 w-6 text-yellow-600" />
             </div>
           </div>
-          {stats?.inventory.lowStockProducts?.length === 0 ? (
+          {stats && stats.inventory.lowStockProducts.length === 0 ? (
             <div className="text-center py-12 bg-gray-50 rounded-2xl">
               <CheckCircleIcon className="h-14 w-14 mx-auto text-green-500 mb-4" />
               <p className="text-gray-700 font-medium text-lg">No low stock products</p>

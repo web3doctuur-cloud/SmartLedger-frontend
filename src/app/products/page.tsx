@@ -154,7 +154,7 @@ export default function ProductsPage() {
   if (isLoading || loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-        <div className="animate-spin rounded-full h-14 w-14 border-b-3 border-l-3 border-yellow-500 border-transparent"></div>
+        <div className="animate-spin rounded-full h-14 w-14 border-2 border-yellow-500 border-t-transparent"></div>
         <p className="text-gray-500 text-lg font-medium animate-pulse">Loading products...</p>
       </div>
     );
@@ -253,6 +253,11 @@ export default function ProductsPage() {
             </tbody>
           </table>
         </div>
+        {products.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-500">No products found. Click &quot;Add Product&quot; to get started.</p>
+          </div>
+        )}
       </div>
 
       {/* Product Modal */}
