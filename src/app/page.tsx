@@ -6,32 +6,12 @@ import { useRouter } from 'next/navigation';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { CubeIcon, CurrencyDollarIcon, CheckCircleIcon, ExclamationTriangleIcon, ChartBarIcon, ArrowTrendingUpIcon } from '@heroicons/react/24/outline';
-
-interface DashboardStats {
-  inventory: {
-    totalProducts: number;
-    totalInventoryValue: number;
-    totalExpectedRevenue: number;
-    lowStockCount: number;
-    lowStockProducts: Array<{ id: number; name: string; quantity: number; lowStockThreshold: number }>;
-  };
-  tasks: {
-    pending: number;
-    completed: number;
-    completionRate: number;
-  };
-  accounting: {
-    income: number;
-    expenses: number;
-    netProfit: number;
-    profitMargin: number;
-  };
-}
+import { DashboardSummaryDto } from '../types';
 
 export default function DashboardPage() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [stats, setStats] = useState<DashboardSummaryDto | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
   const [, startTransition] = useTransition();
 
