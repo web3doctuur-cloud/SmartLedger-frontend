@@ -6,12 +6,12 @@ import { useRouter } from 'next/navigation';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { CubeIcon, CurrencyDollarIcon, CheckCircleIcon, ExclamationTriangleIcon, ChartBarIcon, ArrowTrendingUpIcon } from '@heroicons/react/24/outline';
-import { DashboardSummaryDto } from '../types';
+import { DashboardStats } from '../types';
 
 export default function DashboardPage() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
-  const [stats, setStats] = useState<DashboardSummaryDto | null>(null);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
   const [, startTransition] = useTransition();
 
