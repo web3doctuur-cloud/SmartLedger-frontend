@@ -96,13 +96,8 @@ export default function JournalPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.lines.length < 2) {
-      toast.error('Journal entry must have at least 2 lines');
-      return;
-    }
-
-    if (Math.abs(totalDebits - totalCredits) > 0.01) {
-      toast.error('Debits and credits must be equal');
+    if (formData.lines.length < 1) {
+      toast.error('Journal entry must have at least 1 line');
       return;
     }
 
@@ -122,8 +117,9 @@ export default function JournalPage() {
       setShowModal(false);
       resetForm();
       fetchData();
-    } catch {
-      toast.error('Failed to save journal entry');
+    } catch (error: any) {
+      console.error('Journal entry error:', error);
+      toast.error(error.response?.data?.message || 'Failed to save journal entry');
     }
   };
 
