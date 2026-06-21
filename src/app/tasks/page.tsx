@@ -113,6 +113,29 @@ export default function TasksPage() {
 
   return (
     <div className="space-y-6">
+      <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 border border-yellow-200 rounded-2xl p-4 sm:p-6">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-yellow-200 rounded-full">
+            <svg className="h-6 w-6 text-yellow-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-yellow-800">Application in Progress</h3>
+            <p className="text-yellow-700">We're constantly improving SmartLedger! New features are being added regularly.</p>
+          </div>
+        </div>
+      </div>
+      <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 sm:p-5">
+        <h3 className="font-bold text-indigo-800 mb-2">✅ How to use Tasks</h3>
+        <ul className="text-sm text-indigo-700 space-y-1.5">
+          <li>• Add new tasks using "+ Add Task" button</li>
+          <li>• Edit tasks by clicking the pencil icon</li>
+          <li>• Mark tasks as in-progress with the clock icon</li>
+          <li>• Complete tasks with the check circle icon</li>
+          <li>• Delete tasks with the trash icon</li>
+        </ul>
+      </div>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div><h1 className="text-3xl font-bold text-gray-900">Tasks</h1><p className="text-gray-600 mt-1">Manage your to-do list</p></div>
         <button onClick={() => setShowModal(true)} className="bg-black text-white px-4 py-2 rounded-lg hover:bg-yellow-500 hover:text-black transition-colors w-full sm:w-auto">+ Add Task</button>

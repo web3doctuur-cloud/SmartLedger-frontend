@@ -84,6 +84,27 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-6">
+      <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 border border-yellow-200 rounded-2xl p-4 sm:p-6">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-yellow-200 rounded-full">
+            <svg className="h-6 w-6 text-yellow-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-yellow-800">Application in Progress</h3>
+            <p className="text-yellow-700">We're constantly improving SmartLedger! New features are being added regularly.</p>
+          </div>
+        </div>
+      </div>
+      <div className="bg-pink-50 border border-pink-200 rounded-2xl p-4 sm:p-5">
+        <h3 className="font-bold text-pink-800 mb-2">📊 How to use Analytics</h3>
+        <ul className="text-sm text-pink-700 space-y-1.5">
+          <li>• View pie chart of inventory by category</li>
+          <li>• See expected revenue breakdown by product</li>
+          <li>• Identify top-performing products quickly</li>
+        </ul>
+      </div>
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Analytics</h1>
         <p className="text-gray-600 mt-1">Visual insights into your business performance</p>

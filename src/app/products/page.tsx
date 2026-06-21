@@ -155,6 +155,29 @@ export default function ProductsPage() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
+      <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 border border-yellow-200 rounded-2xl p-4 sm:p-6">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-yellow-200 rounded-full">
+            <svg className="h-6 w-6 text-yellow-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-yellow-800">Application in Progress</h3>
+            <p className="text-yellow-700">We're constantly improving SmartLedger! New features are being added regularly.</p>
+          </div>
+        </div>
+      </div>
+      <div className="bg-green-50 border border-green-200 rounded-2xl p-4 sm:p-5">
+        <h3 className="font-bold text-green-800 mb-2">📦 How to use the Products page</h3>
+        <ul className="text-sm text-green-700 space-y-1.5">
+          <li>• Add new products using "Add Product" button</li>
+          <li>• Edit existing products by clicking the pencil icon</li>
+          <li>• Increase or decrease stock with the + and - buttons</li>
+          <li>• Delete products with the trash icon</li>
+          <li>• View calculated fields like Total Cost, Expected Revenue, and Potential Profit</li>
+        </ul>
+      </div>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">Products</h1>

@@ -344,6 +344,28 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-6">
+      <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 border border-yellow-200 rounded-2xl p-4 sm:p-6">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-yellow-200 rounded-full">
+            <svg className="h-6 w-6 text-yellow-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-yellow-800">Application in Progress</h3>
+            <p className="text-yellow-700">We're constantly improving SmartLedger! New features are being added regularly.</p>
+          </div>
+        </div>
+      </div>
+      <div className="bg-teal-50 border border-teal-200 rounded-2xl p-4 sm:p-5">
+        <h3 className="font-bold text-teal-800 mb-2">📈 How to use Reports</h3>
+        <ul className="text-sm text-teal-700 space-y-1.5">
+          <li>• Switch between different report types using the buttons at the top</li>
+          <li>• Set custom date ranges for Income Statement, Balance Sheet, and Trial Balance</li>
+          <li>• Refresh reports at any time with "Refresh Report" button</li>
+          <li>• View Inventory Summary for stock levels and top products</li>
+        </ul>
+      </div>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Reports</h1>
