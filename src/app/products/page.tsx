@@ -6,28 +6,15 @@ import { useRouter } from 'next/navigation';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 import { PencilIcon, TrashIcon, PlusIcon, MinusIcon, XMarkIcon } from '@heroicons/react/24/outline';
-
-interface Product {
-  id: number;
-  name: string;
-  description?: string;
-  category?: string;
-  quantity: number;
-  costPrice: number;
-  sellingPrice: number;
-  expectedRevenue: number;
-  isLowStock: boolean;
-  lowStockThreshold: number;
-  isActive: boolean;
-}
+import { Product as ProductType } from '../../types';
 
 export default function ProductsPage() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ProductType[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] = useState<ProductType | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -36,6 +23,8 @@ export default function ProductsPage() {
     costPrice: 0,
     sellingPrice: 0,
     lowStockThreshold: 10,
+    imageUrl: null as string | null,
+    sku: null as string | null,
   });
   const [quantityUpdate, setQuantityUpdate] = useState({ id: 0, quantity: 0, notes: '' });
   const [showQuantityModal, setShowQuantityModal] = useState(false);
@@ -50,7 +39,7 @@ export default function ProductsPage() {
 
   const fetchProducts = useCallback(async () => {
     try {
-      const response = await api.get('/Products');
+      const response = await api.get<ProductType[]>('/Products');
       setProducts(response.data);
     } catch {
       toast.error('Failed to load products');
@@ -127,11 +116,13 @@ export default function ProductsPage() {
       costPrice: 0,
       sellingPrice: 0,
       lowStockThreshold: 10,
+      imageUrl: null,
+      sku: null,
     });
     setEditingProduct(null);
   };
 
-  const openEditModal = (product: Product) => {
+  const openEditModal = (product: ProductType) => {
     setEditingProduct(product);
     setFormData({
       name: product.name || '',
@@ -141,6 +132,8 @@ export default function ProductsPage() {
       costPrice: product.costPrice ?? 0,
       sellingPrice: product.sellingPrice ?? 0,
       lowStockThreshold: product.lowStockThreshold ?? 10,
+      imageUrl: product.imageUrl || null,
+      sku: product.sku || null,
     });
     setShowModal(true);
   };
@@ -186,7 +179,9 @@ export default function ProductsPage() {
                 <th className="px-4 sm:px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Quantity</th>
                 <th className="px-4 sm:px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider hidden md:table-cell">Cost</th>
                 <th className="px-4 sm:px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider hidden md:table-cell">Selling</th>
+                <th className="px-4 sm:px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Total Cost</th>
                 <th className="px-4 sm:px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Revenue</th>
+                <th className="px-4 sm:px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider hidden xl:table-cell">Potential Profit</th>
                 <th className="px-4 sm:px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
@@ -217,8 +212,14 @@ export default function ProductsPage() {
                   <td className="px-4 sm:px-6 py-5 whitespace-nowrap text-right text-sm font-medium text-gray-700 hidden md:table-cell">
                     ${product.sellingPrice.toFixed(2)}
                   </td>
+                  <td className="px-4 sm:px-6 py-5 whitespace-nowrap text-right text-sm font-medium text-gray-700 hidden lg:table-cell">
+                    ${product.totalCost.toLocaleString()}
+                  </td>
                   <td className="px-4 sm:px-6 py-5 whitespace-nowrap text-right text-sm font-bold text-green-600 hidden lg:table-cell">
                     ${product.expectedRevenue.toLocaleString()}
+                  </td>
+                  <td className="px-4 sm:px-6 py-5 whitespace-nowrap text-right text-sm font-bold text-blue-600 hidden xl:table-cell">
+                    ${product.potentialProfit.toLocaleString()}
                   </td>
                   <td className="px-4 sm:px-6 py-5 whitespace-nowrap text-center">
                     <div className="flex items-center justify-center gap-2">
@@ -294,18 +295,30 @@ export default function ProductsPage() {
                   value={formData.description} 
                   onChange={(e) => setFormData({...formData, description: e.target.value})} 
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200 text-base resize-none" 
-                  rows={3} 
+                  rows={2} 
                 />
               </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
-                <input 
-                  type="text" 
-                  placeholder="Enter category" 
-                  value={formData.category} 
-                  onChange={(e) => setFormData({...formData, category: e.target.value})} 
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200 text-base" 
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+                  <input 
+                    type="text" 
+                    placeholder="Enter category" 
+                    value={formData.category} 
+                    onChange={(e) => setFormData({...formData, category: e.target.value})} 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200 text-base" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">SKU</label>
+                  <input 
+                    type="text" 
+                    placeholder="Enter SKU" 
+                    value={formData.sku || ''} 
+                    onChange={(e) => setFormData({...formData, sku: e.target.value || null})} 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200 text-base" 
+                  />
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -352,6 +365,16 @@ export default function ProductsPage() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200 text-base" 
                   />
                 </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Image URL</label>
+                <input 
+                  type="text" 
+                  placeholder="Enter image URL" 
+                  value={formData.imageUrl || ''} 
+                  onChange={(e) => setFormData({...formData, imageUrl: e.target.value || null})} 
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200 text-base" 
+                />
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <button 

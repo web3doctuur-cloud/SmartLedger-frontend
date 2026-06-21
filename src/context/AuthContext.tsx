@@ -21,7 +21,6 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  isAdmin: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
@@ -183,13 +182,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     toast.success('Logged out successfully');
   }, []);
 
-  const isAdmin = user?.roles?.includes('Admin') || false;
-
   return (
     <AuthContext.Provider
       value={{
         user,
-        isAdmin,
         isLoading,
         login,
         register,

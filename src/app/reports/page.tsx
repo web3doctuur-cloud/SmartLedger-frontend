@@ -1,211 +1,426 @@
 'use client';
 
-import { useEffect, useState, useTransition, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'next/navigation';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
-import { DocumentArrowDownIcon } from '@heroicons/react/24/outline';
-
-interface IncomeStatement {
-  period: { from: string; to: string };
-  income: { total: number; details: Array<{ accountName: string; amount: number }> };
-  expenses: { total: number; details: Array<{ accountName: string; amount: number }> };
-  netProfit: number;
-  profitMargin: number;
-}
-
-interface BalanceSheet {
-  asOfDate: string;
-  assets: { total: number; details: Array<{ accountName: string; balance: number }> };
-  liabilities: { total: number; details: Array<{ accountName: string; balance: number }> };
-  equity: { total: number; details: Array<{ accountName: string; balance: number }> };
-  isBalanced: boolean;
-}
 
 export default function ReportsPage() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'income' | 'balance'>('income');
-  const [incomeStatement, setIncomeStatement] = useState<IncomeStatement | null>(null);
-  const [balanceSheet, setBalanceSheet] = useState<BalanceSheet | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
-  const [asOfDate, setAsOfDate] = useState<string>('');
-  const [, startTransition] = useTransition();
+  const [activeReport, setActiveReport] = useState<string>('income-statement');
+  const [reportData, setReportData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [dateFilters, setDateFilters] = useState({
+    startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0],
+  });
 
-  const fetchIncomeStatement = useCallback(async () => {
+  const fetchReport = useCallback(async () => {
+    if (!isAuthenticated) return;
     setLoading(true);
     try {
-      const response = await api.get('/Reports/income-statement', { params: dateRange });
-      setIncomeStatement(response.data);
-      setLoading(false);
+      let endpoint = '';
+      let params: any = {};
+      
+      switch (activeReport) {
+        case 'income-statement':
+          endpoint = '/api/reports/income-statement';
+          params = { startDate: dateFilters.startDate, endDate: dateFilters.endDate };
+          break;
+        case 'balance-sheet':
+          endpoint = '/api/reports/balance-sheet';
+          params = { asOfDate: dateFilters.endDate };
+          break;
+        case 'trial-balance':
+          endpoint = '/api/reports/trial-balance';
+          params = { asOfDate: dateFilters.endDate };
+          break;
+        case 'inventory-summary':
+          endpoint = '/api/reports/inventory-summary';
+          break;
+      }
+      
+      const response = await api.get(endpoint, { params });
+      setReportData(response.data);
     } catch (error) {
-      const err = error as { response?: { data?: { message?: string } } };
-      console.error('Failed to load report:', error);
-      toast.error(err.response?.data?.message || 'Unable to load report. Please try again later.');
+      toast.error('Failed to load report');
+    } finally {
       setLoading(false);
     }
-  }, [dateRange]);
-
-  const fetchBalanceSheet = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await api.get('/Reports/balance-sheet', { params: { asOfDate } });
-      setBalanceSheet(response.data);
-      setLoading(false);
-    } catch (error) {
-      const err = error as { response?: { data?: { message?: string } } };
-      console.error('Failed to load balance sheet:', error);
-      toast.error(err.response?.data?.message || 'Unable to load balance sheet. Please try again later.');
-      setLoading(false);
-    }
-  }, [asOfDate]);
+  }, [isAuthenticated, activeReport, dateFilters]);
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) router.push('/login');
-  }, [isLoading, isAuthenticated, router]);
+    if (!authLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [authLoading, isAuthenticated, router]);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      const end = new Date();
-      const start = new Date();
-      start.setDate(start.getDate() - 30);
-      startTransition(() => {
-        setDateRange({ startDate: start.toISOString().split('T')[0], endDate: end.toISOString().split('T')[0] });
-        setAsOfDate(end.toISOString().split('T')[0]);
-      });
-    }
-  }, [isAuthenticated]);
+    fetchReport();
+  }, [fetchReport]);
 
-  useEffect(() => {
-    if (isAuthenticated && dateRange.startDate && dateRange.endDate && activeTab === 'income') {
-      startTransition(() => {
-        fetchIncomeStatement();
-      });
-    }
-    if (isAuthenticated && asOfDate && activeTab === 'balance') {
-      startTransition(() => {
-        fetchBalanceSheet();
-      });
-    }
-  }, [isAuthenticated, dateRange, activeTab, asOfDate, fetchIncomeStatement, fetchBalanceSheet]);
+  const renderIncomeStatement = () => {
+    if (!reportData) return null;
+    return (
+      <div className="bg-white rounded-xl shadow-md p-6">
+        <h2 className="text-2xl font-bold mb-4">Income Statement</h2>
+        <p className="text-gray-600 mb-4">
+          Period: {new Date(reportData.Period.From).toLocaleDateString()} - {new Date(reportData.Period.To).toLocaleDateString()}
+        </p>
+        
+        <div className="mb-8">
+          <h3 className="text-xl font-semibold text-green-600 mb-2">Revenue</h3>
+          <table className="w-full mb-4">
+            <tbody>
+              {reportData.Income.Details.map((item: any) => (
+                <tr key={item.AccountId}>
+                  <td className="py-2">{item.AccountName}</td>
+                  <td className="text-right py-2">${item.Amount.toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="flex justify-between font-bold border-t pt-2">
+            <span>Total Revenue</span>
+            <span>${reportData.Income.Total.toLocaleString()}</span>
+          </div>
+        </div>
 
-  const handleExport = async (type: string) => {
-    try {
-      const urls: Record<string, string> = {
-        products: '/Export/products/excel',
-        inventory: '/Export/inventory-summary/excel',
-        sales: `/Export/sales/csv?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`,
-      };
-      const response = await api.get(urls[type], { responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `${type}_report_${new Date().toISOString().split('T')[0]}.${type === 'sales' ? 'csv' : 'xlsx'}`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      toast.success('Export started');
-    } catch {
-      toast.error('Export failed');
-    }
+        <div className="mb-8">
+          <h3 className="text-xl font-semibold text-red-600 mb-2">Expenses</h3>
+          <table className="w-full mb-4">
+            <tbody>
+              {reportData.Expenses.Details.map((item: any) => (
+                <tr key={item.AccountId}>
+                  <td className="py-2">{item.AccountName}</td>
+                  <td className="text-right py-2">${item.Amount.toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="flex justify-between font-bold border-t pt-2">
+            <span>Total Expenses</span>
+            <span>${reportData.Expenses.Total.toLocaleString()}</span>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 p-4 rounded-xl">
+          <div className="flex justify-between text-2xl font-bold">
+            <span>Net {reportData.IsProfit ? 'Profit' : 'Loss'}</span>
+            <span className={reportData.IsProfit ? 'text-green-600' : 'text-red-600'}>
+              ${reportData.NetProfit.toLocaleString()}
+            </span>
+          </div>
+          <div className="flex justify-between text-sm text-gray-600 mt-2">
+            <span>Profit Margin</span>
+            <span>{reportData.ProfitMargin}%</span>
+          </div>
+        </div>
+      </div>
+    );
   };
 
-  if (isLoading || loading) return <div className="flex justify-center items-center h-96"><div className="animate-spin rounded-full h-12 w-12 border-2 border-yellow-500 border-t-transparent"></div></div>;
+  const renderBalanceSheet = () => {
+    if (!reportData) return null;
+    return (
+      <div className="bg-white rounded-xl shadow-md p-6">
+        <h2 className="text-2xl font-bold mb-4">Balance Sheet</h2>
+        <p className="text-gray-600 mb-4">
+          As of: {new Date(reportData.AsOfDate).toLocaleDateString()}
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <h3 className="text-xl font-semibold text-blue-600 mb-4">Assets</h3>
+            <table className="w-full">
+              <tbody>
+                {reportData.Assets.Details.map((item: any) => (
+                  <tr key={item.Id}>
+                    <td className="py-2">{item.AccountName}</td>
+                    <td className="text-right py-2">${item.Balance.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="flex justify-between font-bold border-t pt-2 mt-2">
+              <span>Total Assets</span>
+              <span>${reportData.Assets.Total.toLocaleString()}</span>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-xl font-semibold text-orange-600 mb-4">Liabilities</h3>
+            <table className="w-full">
+              <tbody>
+                {reportData.Liabilities.Details.map((item: any) => (
+                  <tr key={item.Id}>
+                    <td className="py-2">{item.AccountName}</td>
+                    <td className="text-right py-2">${item.Balance.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="flex justify-between font-bold border-t pt-2 mt-2">
+              <span>Total Liabilities</span>
+              <span>${reportData.Liabilities.Total.toLocaleString()}</span>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-xl font-semibold text-purple-600 mb-4">Equity</h3>
+            <table className="w-full">
+              <tbody>
+                {reportData.Equity.Details.map((item: any) => (
+                  <tr key={item.Id}>
+                    <td className="py-2">{item.AccountName}</td>
+                    <td className="text-right py-2">${item.Balance.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="flex justify-between font-bold border-t pt-2 mt-2">
+              <span>Total Equity</span>
+              <span>${reportData.Equity.Total.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className={`mt-6 p-4 rounded-xl ${reportData.IsBalanced ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+          <div className="flex justify-between font-bold">
+            <span>Total Assets</span>
+            <span>${reportData.Assets.Total.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between font-bold">
+            <span>Liabilities + Equity</span>
+            <span>${reportData.TotalLiabilitiesAndEquity.toLocaleString()}</span>
+          </div>
+          <div className="text-center mt-2 font-semibold">
+            {reportData.IsBalanced ? '✅ Balance Sheet is balanced!' : '❌ Balance Sheet is not balanced!'}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderTrialBalance = () => {
+    if (!reportData) return null;
+    return (
+      <div className="bg-white rounded-xl shadow-md p-6">
+        <h2 className="text-2xl font-bold mb-4">Trial Balance</h2>
+        <p className="text-gray-600 mb-4">
+          As of: {new Date(reportData.AsOfDate).toLocaleDateString()}
+        </p>
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead>
+              <tr className="bg-gray-50">
+                <th className="text-left py-3 px-4">Account</th>
+                <th className="text-right py-3 px-4">Debits</th>
+                <th className="text-right py-3 px-4">Credits</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {Array.from(reportData.Accounts).map((item: any) => (
+                <tr key={item.Account}>
+                  <td className="py-3 px-4">{item.Account}</td>
+                  <td className="text-right py-3 px-4">${item.Debit.toLocaleString()}</td>
+                  <td className="text-right py-3 px-4">${item.Credit.toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="font-bold bg-gray-100">
+                <td className="py-3 px-4">Total</td>
+                <td className="text-right py-3 px-4">${reportData.Totals.Debits.toLocaleString()}</td>
+                <td className="text-right py-3 px-4">${reportData.Totals.Credits.toLocaleString()}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div className={`mt-6 p-4 rounded-xl ${reportData.Totals.IsBalanced ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+          <div className="text-center font-semibold">
+            {reportData.Totals.IsBalanced ? '✅ Trial Balance is balanced!' : '❌ Trial Balance is not balanced!'}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderInventorySummary = () => {
+    if (!reportData) return null;
+    return (
+      <div className="bg-white rounded-xl shadow-md p-6">
+        <h2 className="text-2xl font-bold mb-4">Inventory Summary</h2>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-blue-50 p-4 rounded-xl">
+            <p className="text-gray-600 text-sm">Total Products</p>
+            <p className="text-2xl font-bold">{reportData.Summary.TotalProducts}</p>
+          </div>
+          <div className="bg-green-50 p-4 rounded-xl">
+            <p className="text-gray-600 text-sm">Total Quantity</p>
+            <p className="text-2xl font-bold">{reportData.Summary.TotalQuantity.toLocaleString()}</p>
+          </div>
+          <div className="bg-yellow-50 p-4 rounded-xl">
+            <p className="text-gray-600 text-sm">Inventory Value</p>
+            <p className="text-2xl font-bold">${reportData.Summary.TotalInventoryValue.toLocaleString()}</p>
+          </div>
+          <div className="bg-purple-50 p-4 rounded-xl">
+            <p className="text-gray-600 text-sm">Potential Profit</p>
+            <p className="text-2xl font-bold text-purple-600">${reportData.Summary.TotalPotentialProfit.toLocaleString()}</p>
+          </div>
+        </div>
+
+        <div className="mb-8">
+          <h3 className="text-xl font-semibold mb-4">Top Products by Potential Profit</h3>
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="text-left py-3 px-4">Product</th>
+                  <th className="text-right py-3 px-4">Quantity</th>
+                  <th className="text-right py-3 px-4">Cost Price</th>
+                  <th className="text-right py-3 px-4">Selling Price</th>
+                  <th className="text-right py-3 px-4">Potential Profit</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {reportData.TopProducts.map((product: any) => (
+                  <tr key={product.Id}>
+                    <td className="py-3 px-4">{product.Name}</td>
+                    <td className="text-right py-3 px-4">{product.Quantity.toLocaleString()}</td>
+                    <td className="text-right py-3 px-4">${product.CostPrice.toFixed(2)}</td>
+                    <td className="text-right py-3 px-4">${product.SellingPrice.toFixed(2)}</td>
+                    <td className="text-right py-3 px-4 font-bold text-green-600">${product.PotentialProfit.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {reportData.LowStockProducts.length > 0 && (
+          <div className="mb-8">
+            <h3 className="text-xl font-semibold mb-4 text-red-600">Low Stock Products</h3>
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="text-left py-3 px-4">Product</th>
+                    <th className="text-right py-3 px-4">Current Stock</th>
+                    <th className="text-right py-3 px-4">Threshold</th>
+                    <th className="text-right py-3 px-4">Selling Price</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {reportData.LowStockProducts.map((product: any) => (
+                    <tr key={product.Id} className="bg-red-50">
+                      <td className="py-3 px-4">{product.Name}</td>
+                      <td className="text-right py-3 px-4 text-red-600 font-bold">{product.Quantity}</td>
+                      <td className="text-right py-3 px-4">{product.LowStockThreshold}</td>
+                      <td className="text-right py-3 px-4">${product.SellingPrice.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 border-l-2 border-transparent"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div><h1 className="text-3xl font-bold text-gray-900">Reports</h1><p className="text-gray-600 mt-1">Financial statements</p></div>
-        <div className="flex space-x-2">
-          <button onClick={() => handleExport('products')} className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"><DocumentArrowDownIcon className="h-5 w-5" /><span>Products</span></button>
-          <button onClick={() => handleExport('inventory')} className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"><DocumentArrowDownIcon className="h-5 w-5" /><span>Inventory</span></button>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Reports</h1>
+          <p className="text-gray-600 mt-1">View your business reports and financial statements</p>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => setActiveReport('income-statement')}
+            className={`px-4 py-2 rounded-xl font-semibold transition-colors ${activeReport === 'income-statement' ? 'bg-yellow-500 text-black' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+          >
+            Income Statement
+          </button>
+          <button
+            onClick={() => setActiveReport('balance-sheet')}
+            className={`px-4 py-2 rounded-xl font-semibold transition-colors ${activeReport === 'balance-sheet' ? 'bg-yellow-500 text-black' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+          >
+            Balance Sheet
+          </button>
+          <button
+            onClick={() => setActiveReport('trial-balance')}
+            className={`px-4 py-2 rounded-xl font-semibold transition-colors ${activeReport === 'trial-balance' ? 'bg-yellow-500 text-black' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+          >
+            Trial Balance
+          </button>
+          <button
+            onClick={() => setActiveReport('inventory-summary')}
+            className={`px-4 py-2 rounded-xl font-semibold transition-colors ${activeReport === 'inventory-summary' ? 'bg-yellow-500 text-black' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+          >
+            Inventory Summary
+          </button>
         </div>
       </div>
 
-      <div className="border-b border-gray-200">
-        <nav className="flex space-x-8">
-          <button onClick={() => setActiveTab('income')} className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'income' ? 'border-yellow-500 text-yellow-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>Income Statement</button>
-          <button onClick={() => setActiveTab('balance')} className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'balance' ? 'border-yellow-500 text-yellow-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>Balance Sheet</button>
-        </nav>
+      <div className="bg-white rounded-xl shadow-md p-4 flex gap-4 flex-wrap">
+        {activeReport !== 'inventory-summary' && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+              <input
+                type="date"
+                value={dateFilters.startDate}
+                onChange={(e) => setDateFilters({ ...dateFilters, startDate: e.target.value })}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+              <input
+                type="date"
+                value={dateFilters.endDate}
+                onChange={(e) => setDateFilters({ ...dateFilters, endDate: e.target.value })}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+              />
+            </div>
+          </>
+        )}
+        <div className="self-end">
+          <button
+            onClick={fetchReport}
+            className="px-4 py-2 bg-black text-white rounded-lg hover:bg-yellow-500 hover:text-black transition-colors"
+            disabled={loading}
+          >
+            {loading ? 'Loading...' : 'Refresh Report'}
+          </button>
+        </div>
       </div>
 
-      {activeTab === 'income' && (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 bg-white p-4 rounded-lg shadow-sm">
-            <label className="text-sm font-medium">Date Range:</label>
-            <div className="flex items-center space-x-2">
-              <input type="date" value={dateRange.startDate} onChange={(e) => setDateRange({...dateRange, startDate: e.target.value})} className="px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-              <span>to</span>
-              <input type="date" value={dateRange.endDate} onChange={(e) => setDateRange({...dateRange, endDate: e.target.value})} className="px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-            </div>
-            <button onClick={() => handleExport('sales')} className="ml-auto flex items-center space-x-2 px-3 py-1 bg-yellow-500 text-black rounded-lg hover:bg-yellow-400 transition-colors">Export CSV</button>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-            <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow"><p className="text-sm text-gray-500">Total Income</p><p className="text-2xl font-bold text-green-600">${incomeStatement?.income.total.toLocaleString() || 0}</p></div>
-            <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow"><p className="text-sm text-gray-500">Total Expenses</p><p className="text-2xl font-bold text-red-600">${incomeStatement?.expenses.total.toLocaleString() || 0}</p></div>
-            <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow"><p className="text-sm text-gray-500">Net Profit</p><p className="text-2xl font-bold text-yellow-600">${incomeStatement?.netProfit.toLocaleString() || 0}</p><p className="text-sm">Margin: {incomeStatement?.profitMargin || 0}%</p></div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-            <div className="bg-white rounded-xl shadow-md border hover:shadow-lg transition-shadow">
-              <div className="p-4 border-b bg-green-50"><h3 className="font-semibold text-green-800">Income</h3></div>
-              <div className="divide-y">
-                {incomeStatement?.income.details.map((item, i) => <div key={i} className="flex justify-between p-4"><span>{item.accountName}</span><span className="text-green-600">${item.amount.toLocaleString()}</span></div>)}
-                <div className="flex justify-between p-4 bg-gray-50 font-semibold"><span>Total Income</span><span>${incomeStatement?.income.total.toLocaleString()}</span></div>
-              </div>
-            </div>
-            <div className="bg-white rounded-xl shadow-md border hover:shadow-lg transition-shadow">
-              <div className="p-4 border-b bg-red-50"><h3 className="font-semibold text-red-800">Expenses</h3></div>
-              <div className="divide-y">
-                {incomeStatement?.expenses.details.map((item, i) => <div key={i} className="flex justify-between p-4"><span>{item.accountName}</span><span className="text-red-600">${item.amount.toLocaleString()}</span></div>)}
-                <div className="flex justify-between p-4 bg-gray-50 font-semibold"><span>Total Expenses</span><span>${incomeStatement?.expenses.total.toLocaleString()}</span></div>
-              </div>
-            </div>
-          </div>
+      {loading ? (
+        <div className="flex items-center justify-center h-96">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 border-l-2 border-transparent"></div>
         </div>
-      )}
-
-      {activeTab === 'balance' && (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 bg-white p-4 rounded-lg shadow-sm">
-            <label className="text-sm font-medium">As of Date:</label>
-            <div className="flex items-center space-x-2">
-              <input type="date" value={asOfDate} onChange={(e) => setAsOfDate(e.target.value)} className="px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-            <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow"><p className="text-sm text-gray-500">Total Assets</p><p className="text-2xl font-bold text-blue-600">${balanceSheet?.assets.total.toLocaleString() || 0}</p></div>
-            <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow"><p className="text-sm text-gray-500">Total Liabilities</p><p className="text-2xl font-bold text-orange-600">${balanceSheet?.liabilities.total.toLocaleString() || 0}</p></div>
-            <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow"><p className="text-sm text-gray-500">Total Equity</p><p className="text-2xl font-bold text-purple-600">${balanceSheet?.equity.total.toLocaleString() || 0}</p><p className={`text-sm ${balanceSheet?.isBalanced ? 'text-green-600' : 'text-red-600'}`}>{balanceSheet?.isBalanced ? 'Balanced' : 'Not Balanced'}</p></div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-            <div className="bg-white rounded-xl shadow-md border hover:shadow-lg transition-shadow">
-              <div className="p-4 border-b bg-blue-50"><h3 className="font-semibold text-blue-800">Assets</h3></div>
-              <div className="divide-y">
-                {balanceSheet?.assets.details.map((item, i) => <div key={i} className="flex justify-between p-4"><span>{item.accountName}</span><span className="text-blue-600">${item.balance.toLocaleString()}</span></div>)}
-                <div className="flex justify-between p-4 bg-gray-50 font-semibold"><span>Total Assets</span><span>${balanceSheet?.assets.total.toLocaleString()}</span></div>
-              </div>
-            </div>
-            <div className="bg-white rounded-xl shadow-md border hover:shadow-lg transition-shadow">
-              <div className="p-4 border-b bg-orange-50"><h3 className="font-semibold text-orange-800">Liabilities</h3></div>
-              <div className="divide-y">
-                {balanceSheet?.liabilities.details.map((item, i) => <div key={i} className="flex justify-between p-4"><span>{item.accountName}</span><span className="text-orange-600">${item.balance.toLocaleString()}</span></div>)}
-                <div className="flex justify-between p-4 bg-gray-50 font-semibold"><span>Total Liabilities</span><span>${balanceSheet?.liabilities.total.toLocaleString()}</span></div>
-              </div>
-            </div>
-            <div className="bg-white rounded-xl shadow-md border hover:shadow-lg transition-shadow">
-              <div className="p-4 border-b bg-purple-50"><h3 className="font-semibold text-purple-800">Equity</h3></div>
-              <div className="divide-y">
-                {balanceSheet?.equity.details.map((item, i) => <div key={i} className="flex justify-between p-4"><span>{item.accountName}</span><span className="text-purple-600">${item.balance.toLocaleString()}</span></div>)}
-                <div className="flex justify-between p-4 bg-gray-50 font-semibold"><span>Total Equity</span><span>${balanceSheet?.equity.total.toLocaleString()}</span></div>
-              </div>
-            </div>
-          </div>
+      ) : (
+        <div>
+          {activeReport === 'income-statement' && renderIncomeStatement()}
+          {activeReport === 'balance-sheet' && renderBalanceSheet()}
+          {activeReport === 'trial-balance' && renderTrialBalance()}
+          {activeReport === 'inventory-summary' && renderInventorySummary()}
         </div>
       )}
     </div>

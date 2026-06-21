@@ -16,7 +16,7 @@ interface ChartData {
 }
 
 export default function AnalyticsPage() {
-  const { isAuthenticated, isLoading, isAdmin } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const [categoryData, setCategoryData] = useState<ChartData[]>([]);
   const [revenueData, setRevenueData] = useState<ChartData[]>([]);
@@ -25,8 +25,7 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) router.push('/login');
-    if (!isLoading && !isAdmin) router.push('/');
-  }, [isLoading, isAuthenticated, isAdmin, router]);
+  }, [isLoading, isAuthenticated, router]);
 
   const fetchAnalytics = useCallback(async () => {
     try {
@@ -60,12 +59,12 @@ export default function AnalyticsPage() {
   }, []);
 
   useEffect(() => {
-    if (isAuthenticated && isAdmin) {
+    if (isAuthenticated) {
       startTransition(() => {
         fetchAnalytics();
       });
     }
-  }, [isAuthenticated, isAdmin, fetchAnalytics]);
+  }, [isAuthenticated, fetchAnalytics]);
 
   // Custom label formatter to fix TypeScript error
   const renderLabel = (props: PieLabelRenderProps) => {
@@ -79,14 +78,6 @@ export default function AnalyticsPage() {
     return (
       <div className="flex justify-center items-center h-96">
         <div className="animate-spin rounded-full h-12 w-12 border-2 border-yellow-500 border-t-transparent"></div>
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-    return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-8 text-center">
-        <p className="text-yellow-800 text-lg">Analytics are only available for administrators.</p>
       </div>
     );
   }
